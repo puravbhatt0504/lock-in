@@ -1,0 +1,13 @@
+# Secrets and personal state
+.env
+chrome-extension/schedule.json
+pc-blocker/blocker-log.txt
+pc-blocker/unlock.json
+pc-blocker/schedule-host.json
+
+# Study material and mocks (downloaded PDFs/videos, personal mocks)
+study-material/
+
+# Android build output and local signing key
+phone-blocker/out/
+phone-blocker/signing.keystore

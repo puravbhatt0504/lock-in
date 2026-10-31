@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Focus</title>
+<link rel="icon" href="icons/32.png">
+<link rel="stylesheet" href="style.css">
+<style>
+  main { padding-bottom: 48px; }
+  .grid { display: grid; gap: 18px; margin-top: 18px; }
+  .g-top { grid-template-columns: 1.25fr 1fr; }
+  .g-mid { grid-template-columns: 1.6fr 1fr; align-items: start; }
+  .clock { font-size: 15px; color: var(--soft); padding-left: 14px; border-left: 1px solid var(--line); }
+
+  /* Countdown */
+  .hero { display: flex; flex-direction: column; justify-content: space-between; gap: 26px; min-height: 290px; }
+  .count { display: flex; align-items: flex-end; gap: 18px; flex-wrap: wrap; }
+  .count .big { font-size: clamp(88px, 11vw, 140px); line-height: .82; font-weight: 600; letter-spacing: -.03em; position: relative; padding-bottom: 18px; }
+  .count .big::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 0; height: 8px; border-radius: 2px; background: var(--accent); }
+  .count .what { padding-bottom: 14px; }
+  .count .what strong { display: block; font: 600 22px/1.15 var(--heading); letter-spacing: -.01em; }
+  .meter { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 0; border-radius: inherit; background: var(--accent); transition: width .8s var(--ease); }
+  .meter.ok i { background: var(--ok); }
+  .meter-l { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 13px; color: var(--soft); }
+
+  /* Live status */
+  .status { display: flex; flex-direction: column; gap: 10px; border: 1px solid transparent; }
+  .status .state { display: inline-flex; align-items: center; gap: 8px; }
+  .status .state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .status h2 { font-size: 26px; }
+  .status .detail { color: var(--soft); max-width: 46ch; }
+  .status .foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--soft); }
+  .status[data-state="block"] { background: var(--night); color: var(--night-ink); border-color: var(--accent-line); }
+  .status[data-state="block"] .state { color: #FF6B70; }
+  .status[data-state="block"] .detail, .status[data-state="block"] .foot { color: color-mix(in srgb, var(--night-ink) 70%, transparent); }
+  .status[data-state="block"] .foot { border-color: rgb(255 255 255 / .1); }
+  .status[data-state="block"] .meter { background: rgb(255 255 255 / .12); }
+  .status[data-state="block"] .meter i { background: #FF4B52; }
+  .status[data-state="block"] .meter-l { color: color-mix(in srgb, var(--night-ink) 70%, transparent); }
+  .status[data-state="lock"] .state { color: var(--accent); }
+  .status[data-state="lock"] { border-color: var(--accent-line); }
+  .status[data-state="free"] .state { color: var(--ok); }
+  .status[data-state="off"] .state { color: var(--faint); }
+  .pulse::before { animation: pulse 2s infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  /* Today */
+  .tasks { display: flex; flex-direction: column; }
+  .task { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line); }
+  .task:first-child { border-top: 0; padding-top: 4px; }
+  .check { appearance: none; margin: 2px 0 0; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); background: var(--paper); cursor: pointer; display: grid; place-items: center; transition: background .2s, border-color .2s, transform .15s var(--ease); }
+  .check:hover { border-color: var(--ok); }
+  .check:active { transform: scale(.92); }
+  .check::after { content: ""; width: 11px; height: 6px; border: solid #fff; border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg) translate(1px, -1px) scale(.4); opacity: 0; transition: transform .25s var(--ease), opacity .2s; }
+  .check:checked { background: var(--ok); border-color: var(--ok); }
+  .check:checked::after { opacity: 1; transform: rotate(-45deg) translate(1px, -1px) scale(1); }
+  .task label { cursor: pointer; display: block; }
+  .task .lab { display: block; margin-bottom: 5px; }
+  .task .txt { font-size: 16.5px; line-height: 1.45; font-weight: 500; }
+  .task.done .txt { color: var(--faint); text-decoration: line-through; text-decoration-color: var(--faint); }
+  .task.main .txt { font-size: 18px; }
+
+  /* Stats */
+  .stats { display: flex; flex-direction: column; gap: 18px; }
+  .stat { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 16px; }
+  .stat .n { font: 600 44px/1 var(--display); letter-spacing: -.02em; }
+  .stat .n small { font-size: 20px; color: var(--faint); font-weight: 500; }
+  .stat .l { color: var(--soft); font-size: 14px; }
+  .stat .meter { grid-column: 1 / -1; margin-top: 8px; }
+  .stat .side { text-align: right; font-size: 13px; color: var(--soft); }
+
+  /* Six-week plan */
+  .weeks { display: grid; grid-template-columns: 34px repeat(7, 1fr); gap: 6px; }
+  .weeks .h { font-size: 12px; color: var(--faint); text-align: center; padding-bottom: 2px; }
+  .weeks .w { font: 600 12px/1 var(--display); color: var(--faint); display: grid; place-items: center start; }
+  .cell { position: relative; height: 58px; border-radius: 10px; background: var(--surface-2); display: flex; flex-direction: column; justify-content: space-between; padding: 7px 9px; font: 500 14px/1 var(--display); color: var(--soft); }
+  .cell.none { background: transparent; border: 1px dashed var(--line); color: var(--faint); }
+  .cell.done { background: var(--ok-soft); color: var(--ok); }
+  .cell.miss { background: var(--accent-soft); color: var(--accent); }
+  .cell.today { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); }
+  .cell .tag { font: 600 10px/1 var(--text); letter-spacing: .06em; text-transform: uppercase; }
+  .cell.mock .tag { color: var(--accent); }
+  .cell.test { background: var(--accent); color: #fff; }
+  .cell.test .tag { color: #fff; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 12px; height: 12px; border-radius: 4px; background: var(--surface-2); }
+  .legend i.done { background: var(--ok-soft); box-shadow: inset 0 0 0 1px var(--ok); }
+  .legend i.miss { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+  .legend i.test { background: var(--accent); }
+
+  /* Mocks */
+  form.mock { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; padding: 14px; border-radius: var(--r-md); background: var(--surface-2); }
+  form.mock label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--soft); font-weight: 500; }
+  form.mock input { background: var(--surface); }
+  form.mock input[type=number] { width: 76px; }
+  .mocks { display: flex; flex-direction: column; margin-top: 8px; }
+  .mrow { display: grid; grid-template-columns: 110px 1fr auto auto; gap: 22px; align-items: center; padding: 16px 0; border-top: 1px solid var(--line); }
+  .mrow:first-child { border-top: 0; }
+  .bands { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .band { font-size: 12px; color: var(--soft); }
+  .band b { font: 600 15px/1 var(--display); color: var(--ink); margin-left: 4px; }
+  .band .track { position: relative; height: 6px; border-radius: 99px; background: var(--surface-2); margin-top: 7px; }
+  .band .track i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--ok); }
+  .band.low .track i { background: var(--accent); }
+  .band .track::after { content: ""; position: absolute; left: calc(7 / 9 * 100%); top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .55; border-radius: 1px; }
+  .overall { font: 600 30px/1 var(--display); text-align: right; }
+  .overall small { display: block; font: 500 11.5px/1.3 var(--text); margin-top: 4px; }
+  .overall .ok { color: var(--ok); } .overall .no { color: var(--accent); }
+  .empty { padding: 26px 0 6px; color: var(--soft); }
+
+  /* Settings */
+  .settings { display: grid; grid-template-columns: 1fr auto auto; gap: 22px 34px; align-items: center; }
+  .settings label { display: flex; gap: 12px; align-items: center; cursor: pointer; }
+  .settings .sub { display: block; font-size: 13px; color: var(--soft); }
+
+  @media (max-width: 920px) { .g-top, .g-mid { grid-template-columns: 1fr; } .settings { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) {
+    .panel { padding: 20px 18px 22px; }
+    .hero { min-height: 0; }
+    .weeks { grid-template-columns: 22px repeat(7, 1fr); gap: 4px; }
+    .cell { height: 46px; padding: 5px; font-size: 12.5px; border-radius: 8px; }
+    .cell .tag { font-size: 8px; letter-spacing: 0; }
+    .mrow { grid-template-columns: 1fr auto; gap: 12px; }
+    .mrow .bands { grid-column: 1 / -1; grid-row: 2; }
+    .mrow .date { grid-column: 1; }
+    .clock { display: none; }
+    .topbar nav a { padding: 7px 10px; }
+  }
+  .rise:nth-child(2) { animation-delay: .06s; } .rise:nth-child(3) { animation-delay: .12s; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="wrap topbar">
+  <a class="brand" href="newtab.html"><img src="icons/48.png" alt="">IELTS Focus</a>
+  <nav aria-label="Pages">
+    <a href="newtab.html" aria-current="page">Today</a>
+    <a href="schedule.html">Schedule</a>
+  </nav>
+  <span class="clock num" id="clock"></span>
+</header>
+
+<main class="wrap" id="main">
+  <div class="grid g-top">
+    <section class="panel hero rise" aria-labelledby="countlabel">
+      <p class="eyebrow">Target 7.5 overall · no section under 7.0</p>
+      <div class="count">
+        <span class="big num" id="countdown">–</span>
+        <div class="what"><strong id="countlabel">days to test day</strong><span class="muted" id="testdate"></span></div>
+      </div>
+      <div>
+        <div class="meter" role="progressbar" aria-label="Study plan progress" id="planmeter"><i id="planbar"></i></div>
+        <div class="meter-l"><span id="planday"></span><span id="weekname"></span></div>
+      </div>
+    </section>
+
+    <section class="panel status rise" id="status" data-state="off" aria-live="polite">
+      <span class="eyebrow state" id="st-state">Loading</span>
+      <h2 id="st-title">Reading your schedule…</h2>
+      <p class="detail" id="st-detail"></p>
+      <div id="st-prog" hidden>
+        <div class="meter"><i id="st-bar"></i></div>
+        <div class="meter-l"><span id="st-span"></span><span id="st-left"></span></div>
+      </div>
+      <div class="foot"><span id="st-next"></span><span id="st-cal"></span></div>
+    </section>
+  </div>
+
+  <div class="grid g-mid">
+    <section class="panel rise" id="today">
+      <div class="panel-h"><h2 id="weektitle">Today</h2><span class="muted small" id="weekno"></span></div>
+      <div class="tasks" id="tasks"></div>
+    </section>
+
+    <section class="panel stats rise" aria-label="Progress">
+      <div class="stat"><div><div class="n" id="streak">0</div><div class="l">day streak</div></div><div class="side" id="streak-side"></div></div>
+      <div class="stat"><div><div class="n" id="progress">0<small>/40</small></div><div class="l">plan days done</div></div><div class="side" id="progress-side"></div>
+        <div class="meter ok"><i id="progressbar"></i></div></div>
+      <div class="stat"><div><div class="n" id="lastmock">–</div><div class="l">latest mock overall</div></div><div class="side" id="lastmock-side"></div></div>
+    </section>
+  </div>
+
+  <section class="panel grid" aria-labelledby="plan-h">
+    <div class="panel-h" style="margin:0"><h2 id="plan-h">Study plan</h2><span class="muted small">Hover a day for its task</span></div>
+    <div class="weeks" id="weeks"></div>
+    <div class="legend"><span><i class="done"></i>Main task done</span><span><i class="miss"></i>Missed</span><span><i></i>Coming up</span><span><i class="test"></i>Test day</span></div>
+  </section>
+
+  <section class="panel grid" aria-labelledby="mock-h">
+    <div class="panel-h" style="margin:0"><h2 id="mock-h">Mock scores</h2><span class="muted small">Bars show each section against the 7.0 line</span></div>
+    <form class="mock" id="mockform">
+      <label>Date<input type="date" id="m-date" required></label>
+      <label>Listening<input type="number" id="m-l" min="0" max="9" step="0.5" required></label>
+      <label>Reading<input type="number" id="m-r" min="0" max="9" step="0.5" required></label>
+      <label>Writing<input type="number" id="m-w" min="0" max="9" step="0.5" required></label>
+      <label>Speaking<input type="number" id="m-s" min="0" max="9" step="0.5" required></label>
+      <button class="primary" type="submit">Add mock</button>
+    </form>
+    <div class="mocks" id="mocks"></div>
+  </section>
+
+  <section class="panel grid settings" aria-label="Settings">
+    <label><input type="checkbox" class="switch" id="earn"><span>Earn mode<span class="sub">YouTube and anime stay locked in free time until today's main task is ticked.</span></span></label>
+    <label>Test date <input type="date" id="tdate"></label>
+    <a class="btn" href="schedule.html">Edit schedule</a>
+  </section>
+  <p class="muted small" style="margin-top:16px">Plan videos always open, even during blocks. Games are handled by the PC blocker.</p>
+</main>
+<script src="plan.js"></script>
+<script src="newtab.js"></script>
+</body>
+</html>

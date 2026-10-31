@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Not now · IELTS Focus</title>
+<link rel="icon" href="icons/32.png">
+<link rel="stylesheet" href="style.css">
+<style>
+  main { width: min(640px, 100% - 40px); margin-inline: auto; padding: 11vh 0 60px; }
+  .brand { margin-bottom: 44px; }
+  h1 { font: 600 clamp(64px, 12vw, 104px)/.9 var(--display); letter-spacing: -.03em; margin-top: 14px; position: relative; padding-bottom: 20px; width: fit-content; }
+  h1::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 8px; border-radius: 2px; background: var(--accent); }
+  .why { font-size: 19px; margin-top: 22px; max-width: 38ch; }
+  .left { margin-top: 18px; }
+  .left .meter { height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+  .left .meter i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+  .left p { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: var(--soft); }
+  .panel { margin-top: 34px; }
+  #task { margin-top: 8px; font-size: 17px; font-weight: 500; }
+  .panel .go { display: inline-block; margin-top: 18px; }
+  details { margin-top: 26px; padding: 0 4px; }
+  summary { cursor: pointer; color: var(--soft); font-size: 13.5px; width: fit-content; }
+  summary:hover { color: var(--ink); }
+  .pass { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .pass input { width: 100%; }
+  .pass button { align-self: flex-start; }
+  #passmsg:empty { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <a class="brand" href="newtab.html"><img src="icons/48.png" alt="">IELTS Focus</a>
+  <p class="eyebrow red" id="site">Blocked</p>
+  <h1>Not now.</h1>
+  <p class="why" id="why"></p>
+  <div class="left" id="left" hidden><div class="meter"><i id="bar"></i></div><p><span id="span"></span><span id="mins"></span></p></div>
+  <section class="panel">
+    <p class="eyebrow">Today's task</p>
+    <p id="task"></p>
+    <div class="chips" id="vids"></div>
+    <a class="btn primary go" href="newtab.html">Open your tracker</a>
+  </section>
+  <details>
+    <summary>Emergency pass (10 minutes, once a day)</summary>
+    <div class="pass">
+      <p class="small muted">Type exactly: <strong id="phrase"></strong></p>
+      <input type="text" id="typed" autocomplete="off" spellcheck="false" aria-label="Type the sentence">
+      <button id="go">Unlock for 10 minutes</button>
+      <p class="small" id="passmsg"></p>
+    </div>
+  </details>
+</main>
+<script src="plan.js"></script>
+<script src="blocked.js"></script>
+</body>
+</html>

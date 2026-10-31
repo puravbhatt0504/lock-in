@@ -1,0 +1,92 @@
+{
+  "_readme": "Single source of truth for study blocks, used by the Chrome extension AND the PC game blocker. Times are your PC's local time. Edit it from the extension (new tab > Edit schedule) or the game blocker dashboard (Edit schedule).",
+  "activeFrom": "2026-11-01",
+  "activeUntil": "2027-01-16",
+  "blocks": [
+    {
+      "label": "Morning speaking",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "start": "10:00",
+      "end": "10:45",
+      "until": "2026-12-04"
+    },
+    {
+      "label": "Evening study block",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "start": "19:15",
+      "end": "20:45",
+      "until": "2026-12-03"
+    },
+    {
+      "label": "Weekend timed tests / mock",
+      "days": [
+        "Sat",
+        "Sun"
+      ],
+      "start": "11:00",
+      "end": "13:45",
+      "from": "2026-11-01",
+      "until": "2026-11-29"
+    },
+    {
+      "label": "dMAT study",
+      "days": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "start": "19:15",
+      "end": "20:15",
+      "from": "2026-12-07",
+      "until": "2027-01-14"
+    },
+    {
+      "label": "dMAT weekend practice / mock",
+      "days": [
+        "Sat",
+        "Sun"
+      ],
+      "start": "10:00",
+      "end": "12:45",
+      "from": "2026-12-12",
+      "until": "2027-01-10"
+    }
+  ],
+  "games": {
+    "_readme": "Games stay closed until freeAfter each day (on top of the study blocks). 00:00 = only block during study blocks. curfew null = no curfew.",
+    "freeAfter": {
+      "Mon": "20:45",
+      "Tue": "20:45",
+      "Wed": "20:45",
+      "Thu": "20:45",
+      "Fri": "20:45",
+      "Sat": "13:45",
+      "Sun": "13:45"
+    },
+    "curfew": "01:30"
+  },
+  "calendar": {
+    "_readme": "Google Calendar secret iCal address. Once synced, its timed events whose title starts with prefix replace the weekly blocks. The game blocker re-syncs every 10 minutes.",
+    "url": "",
+    "prefix": "IELTS, dMAT Block",
+    "syncedAt": null,
+    "error": null,
+    "events": []
+  }
+}

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schedule · IELTS Focus</title>
+<link rel="icon" href="icons/32.png">
+<link rel="stylesheet" href="style.css">
+<style>
+  main { width: min(860px, 100% - 40px); padding-bottom: 120px; }
+  .head { margin: 26px 0 22px; }
+  .head h1 { font-size: clamp(30px, 4vw, 40px); margin-top: 8px; }
+  .head p { margin-top: 8px; max-width: 62ch; }
+  .panel + .panel { margin-top: 18px; }
+  .panel > p.muted { margin: -6px 0 16px; max-width: 64ch; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .row + .row { margin-top: 10px; }
+  .lab { width: 48px; color: var(--soft); font-size: 13.5px; }
+  .field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--soft); }
+  .field + .field { margin-top: 12px; }
+  .field input { font-weight: 400; font-size: 15px; color: var(--ink); }
+  #cal-prefix { width: 180px; }
+
+  .badge { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); color: var(--soft); }
+  .badge.on { background: var(--ok-soft); color: var(--ok); }
+  .badge.err { background: var(--accent-soft); color: var(--accent); }
+  .calstat { margin-top: 14px; font-size: 13.5px; }
+  .upcoming { list-style: none; padding: 0; margin: 10px 0 0; border-radius: var(--r-md); background: var(--surface-2); }
+  .upcoming li { display: grid; grid-template-columns: 96px 100px 1fr; gap: 10px; padding: 9px 14px; font-size: 13.5px; border-top: 1px solid var(--line); }
+  .upcoming li:first-child { border-top: 0; }
+  .upcoming .num { color: var(--soft); }
+  details.how { margin-top: 14px; font-size: 13.5px; }
+  details.how summary { cursor: pointer; color: var(--accent); font-weight: 600; width: fit-content; }
+  details.how ol { margin: 10px 0 6px; padding-left: 20px; color: var(--soft); }
+  details.how li + li { margin-top: 3px; }
+
+  .note { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-md); background: var(--accent-soft); color: var(--ink); font-size: 13.5px; margin-bottom: 14px; }
+  .note::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 7px; flex-shrink: 0; }
+  .block { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px; margin-bottom: 12px; transition: border-color .2s; }
+  .block:focus-within { border-color: color-mix(in srgb, var(--line) 40%, var(--soft)); }
+  .block .name { flex: 1; min-width: 180px; font-weight: 600; }
+  .paused .block { opacity: .6; }
+  .pills { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+  .pill { position: relative; font-size: 13px; font-weight: 600; width: 50px; text-align: center; padding: 6px 0; border-radius: var(--r-sm); border: 1px solid var(--line); background: var(--surface); color: var(--soft); cursor: pointer; user-select: none; transition: background .2s, color .2s, border-color .2s; }
+  .pill:hover { border-color: var(--soft); }
+  .pill input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .pill:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pill:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .free { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+  .free label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 600; color: var(--soft); }
+  .free input { width: 100%; min-width: 0; }
+
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
+  .bar .in { width: min(860px, 100% - 40px); margin: 0 auto; padding: 14px 0; display: flex; gap: 10px; align-items: center; }
+  #msg { flex: 1; font-size: 13.5px; }
+  #msg.err { color: var(--accent); } #msg.ok { color: var(--ok); } #msg.lock { color: var(--accent); font-weight: 600; }
+  @media (max-width: 560px) {
+    .free { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .upcoming li { grid-template-columns: 1fr auto; }
+    .upcoming li span:last-child { grid-column: 1 / -1; }
+    .pill { width: 42px; }
+    .bar .in { flex-wrap: wrap; } #msg { flex-basis: 100%; }
+    .topbar nav a { padding: 7px 10px; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="wrap topbar">
+  <a class="brand" href="newtab.html"><img src="icons/48.png" alt="">IELTS Focus</a>
+  <nav aria-label="Pages">
+    <a href="newtab.html">Today</a>
+    <a href="schedule.html" aria-current="page">Schedule</a>
+  </nav>
+</header>
+
+<main class="wrap" id="main">
+  <div class="head">
+    <p class="eyebrow red">Schedule</p>
+    <h1>When you study, everything else waits</h1>
+    <p class="muted">Used by this extension and the PC game blocker. Saving goes through the PC app, so it needs to be installed (pc-blocker\install.bat).</p>
+  </div>
+
+  <section class="panel rise">
+    <div class="panel-h"><h2>Study plan</h2></div>
+    <p class="muted small">Outside these dates nothing is blocked.</p>
+    <div class="row">From <input type="date" id="from" aria-label="Plan start"> to <input type="date" id="until" aria-label="Plan end"></div>
+  </section>
+
+  <section class="panel rise" id="cal">
+    <div class="panel-h"><h2>Google Calendar</h2><span class="badge" id="cal-badge">Not connected</span></div>
+    <p class="muted small">Add, move or delete study sessions in Google Calendar and they become your blocks, here and in the PC app. Timed events only; all-day events are ignored. Syncs every 10 minutes.</p>
+    <label class="field">Secret address in iCal format
+      <input type="url" id="cal-url" placeholder="https://calendar.google.com/calendar/ical/…/private-…/basic.ics" autocomplete="off" spellcheck="false">
+    </label>
+    <label class="field">Only events whose title starts with (separate several with commas)
+      <input type="text" id="cal-prefix" maxlength="40" placeholder="all events" autocomplete="off">
+    </label>
+    <p class="calstat" id="cal-status"></p>
+    <ul class="upcoming" id="cal-list" hidden></ul>
+    <details class="how">
+      <summary>Where do I find the link?</summary>
+      <ol>
+        <li>Open calendar.google.com on your computer.</li>
+        <li>Gear icon, then Settings.</li>
+        <li>Under "Settings for my calendars", click your calendar.</li>
+        <li>In "Integrate calendar", copy "Secret address in iCal format".</li>
+      </ol>
+      <p class="muted">Keep it private. Anyone with this link can read your calendar.</p>
+    </details>
+  </section>
+
+  <section class="panel rise" id="weekly">
+    <div class="panel-h"><h2>Weekly blocks</h2></div>
+    <p class="muted small">YouTube, anime sites and games are blocked during these. Leave a block's dates empty to run it for the whole plan.</p>
+    <p class="note" id="paused" hidden>Paused while Google Calendar is connected. They come back if you remove the calendar link.</p>
+    <div id="blocks"></div>
+    <button type="button" id="add">+ Add block</button>
+  </section>
+
+  <section class="panel rise">
+    <div class="panel-h"><h2>Games</h2></div>
+    <p class="muted small">Outside study blocks, games stay closed until this time each day. 00:00 means only during study blocks.</p>
+    <div class="free" id="free"></div>
+    <div class="row" style="margin-top:18px">Curfew: games close at <input type="time" id="curfew" aria-label="Curfew"> <span class="muted small">empty = no curfew</span></div>
+  </section>
+</main>
+<div class="bar"><div class="in">
+  <span id="msg" role="status"></span>
+  <button type="button" id="cancel">Cancel</button>
+  <button class="primary" id="save">Save schedule</button>
+</div></div>
+<script src="plan.js"></script>
+<script src="schedule.js"></script>
+</body>
+</html>

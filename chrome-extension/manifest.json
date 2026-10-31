@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArPz3F3uCv0LPHjn/vfju1/EfDZLuCT65ZwxgDmFVOhisP16rQFjiJlXnHWkQR0PQIFCbnLu/lSIjbLzzfUEEcEOzgZWx8Xmk+Nrpk+DZYnJuU9GbyVmOvBMWYEBuECHHtUAcNR0hvqzfuAHbW5Y/1Gxn8uia3Lru2lS/sdsfuSv57FXBY8X/KNfdWBdzV5K/VDkXV2aztlpO5VCfM7hxSfn4M3AHixGhwvrYCtCsTL3liTT++MRf/iTFX31l8vA/fiiK8aHRB8srv9GWg/Ihn/WffgsV7u6iXQyB74TiG6cTKWdUixSCZruKZrqGh9lYjl9FvKoUbpQjsrXwEsXazwIDAQAB",
+  "name": "IELTS Focus",
+  "version": "1.0.0",
+  "description": "Blocks YouTube and anime sites during IELTS study blocks (plan videos stay allowed). New tab shows today's task, streak and mock scores.",
+  "permissions": ["storage", "alarms", "nativeMessaging", "declarativeNetRequest", "tabs"],
+  "host_permissions": ["*://*/*"],
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "background": { "service_worker": "background.js" },
+  "chrome_url_overrides": { "newtab": "newtab.html" },
+  "content_scripts": [
+    { "matches": ["*://*.youtube.com/*"], "js": ["plan.js", "content.js"], "run_at": "document_start" }
+  ],
+  "web_accessible_resources": [
+    { "resources": ["blocked.html"], "matches": ["<all_urls>"] }
+  ]
+}

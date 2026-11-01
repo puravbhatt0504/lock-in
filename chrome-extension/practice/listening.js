@@ -79,6 +79,17 @@ function pickVoices() {
   const W = pref(fem) || pref(en), M = pref(mal) || pref(en);
   return { W, M, N: en.find((v) => v !== W && v !== M) || M || W };
 }
+// Edge's natural voices, cast per part with the IELTS mix of accents. Other browsers fall back to pickVoices().
+const CAST = { GB: [['Sonia'], ['Ryan', 'Thomas']], AU: [['Natasha'], ['William']], NZ: [['Molly'], ['Mitchell']],
+  CA: [['Clara'], ['Liam']], IE: [['Emily'], ['Connor']], US: [['Jenny', 'Aria', 'Emma'], ['Guy', 'Andrew', 'Brian']] };
+const MIX = ['GB', 'AU', 'GB', 'NZ', 'CA', 'GB', 'US', 'IE', 'GB', 'AU', 'NZ'];
+const ACCENT = { GB: 'British', AU: 'Australian', NZ: 'New Zealand', CA: 'Canadian', IE: 'Irish', US: 'American' };
+function castFor(p, base) {
+  const natural = (name) => synth.getVoices().find((v) => v.name.includes(` ${name} `) && /natural/i.test(v.name));
+  const one = (acc, sex) => { const pool = CAST[acc][sex], v = natural(pool[(N + p) % pool.length]); return v && { v, label: `${v.name.split(' ')[1]} (${ACCENT[acc]})` }; };
+  const i = N * 4 + p, W = one(MIX[i % MIX.length], 0), M = one(MIX[(i + 3) % MIX.length], 1), Nr = natural('Libby');
+  return { W: W ? W.v : base.W, M: M ? M.v : base.M, N: Nr || base.N, labels: { W: W && W.label, M: M && M.label } };
+}
 const voicesReady = new Promise((res) => {
   if (!synth || synth.getVoices().length) return res();
   synth.onvoiceschanged = () => res();
@@ -91,7 +102,8 @@ const sayOne = (text, voice, rate) => new Promise((res) => {
   synth.speak(u);
 });
 async function say(text, voice, rate) {
-  // Sentence by sentence: Chrome cuts off long utterances on some voices.
+  // Chrome's Google voices cut off long utterances, so those go sentence by sentence; Edge's natural voices read whole lines.
+  if (!voice || !/google/i.test(voice.name)) return sayOne(text, voice, rate);
   for (const s of text.match(/[^.!?]+[.!?]*/g) || [text]) { if (!playing) return; await sayOne(s.trim(), voice, rate); }
 }
 const wait = (secs, msg) => new Promise((res) => {
@@ -105,13 +117,15 @@ const wait = (secs, msg) => new Promise((res) => {
 async function playFrom(start) {
   if (!synth) { $('status').textContent = 'This browser has no built-in speech voices. Use Edge or Chrome.'; return; }
   await voicesReady;
-  const V = pickVoices(), rate = +$('rate').value;
+  const base = pickVoices(), rate = +$('rate').value;
   playing = true; $('play').disabled = true; $('stop').disabled = false;
   for (let p = start; p < T.length && playing; p++) {
+    const V = castFor(p, base), who2 = [...new Set(T[p].script.map((l) => l[0]))].filter((w) => V.labels[w]);
+    const playingMsg = `Part ${p + 1} · playing${who2.length ? ' · ' + who2.map((w) => V.labels[w]).join(', ') : ' · open in Microsoft Edge for natural voices'}`;
     for (const [who, a, b] of T[p].script) {
       if (!playing) break;
       if (who === 'P') { await wait(a, `Part ${p + 1} · ${b}`); continue; }
-      $('status').textContent = `Part ${p + 1} · playing`;
+      $('status').textContent = playingMsg;
       await say(a, V[who], rate);
     }
   }

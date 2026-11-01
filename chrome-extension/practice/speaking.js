@@ -44,7 +44,8 @@ const synth = window.speechSynthesis;
 const say = (text) => new Promise((res) => {
   if (!synth) return res();
   synth.cancel();
-  const en = synth.getVoices().filter((v) => /^en/i.test(v.lang)), v = en.find((x) => /en-GB/i.test(x.lang)) || en[0];
+  const en = synth.getVoices().filter((v) => /^en/i.test(v.lang)), name = ['Ryan', 'Sonia', 'Thomas', 'Libby'][N - 1];
+  const v = en.find((x) => x.name.includes(` ${name} `) && /natural/i.test(x.name)) || en.find((x) => /en-GB/i.test(x.lang)) || en[0];
   const u = new SpeechSynthesisUtterance(text);
   if (v) { u.voice = v; u.lang = v.lang; }
   u.rate = 0.95; u.onend = u.onerror = () => res();

@@ -43,6 +43,7 @@ function Test-Schedule($s) {
       if (-not (Test-Time $s.games.freeAfter.$d)) { return "Games unlock time for $d must be 24-hour, like 20:45 (00:00 = only during blocks)." }
     }
     if ($s.games.curfew -and -not (Test-Time $s.games.curfew)) { return 'The curfew must be 24-hour, like 23:30, or empty for none.' }
+    if (@($s.games.curfewDays | Where-Object { $DayNames -notcontains $_ }).Count) { return 'Curfew days must be Mon..Sun.' }
   }
   if ($s.calendar -and $s.calendar.url) {
     if ("$($s.calendar.url)" -notmatch '^https://\S+$' -or "$($s.calendar.url)".Length -gt 2000) { return 'The calendar link must be the https:// "Secret address in iCal format" from Google Calendar.' }
@@ -174,10 +175,13 @@ function Save-Schedule($s, $path) {
     $free = [ordered]@{}
     foreach ($d in $DayNames) { $free[$d] = "$($s.games.freeAfter.$d)" }
     $out.games = [ordered]@{
-      _readme   = 'Games stay closed until freeAfter each day (on top of the study blocks). 00:00 = only block during study blocks. curfew null = no curfew.'
+      _readme   = 'Games stay closed until freeAfter each day (on top of the study blocks). 00:00 = only block during study blocks. curfew null = no curfew. curfewDays = the nights it applies (missing = every night).'
       freeAfter = $free
       curfew    = $(if ($s.games.curfew) { "$($s.games.curfew)" } else { $null })
     }
+    # The editors don't send curfewDays; keep what the file has
+    $cd = if ($null -ne $s.games.curfewDays) { $s.games.curfewDays } else { try { (Get-Content -Raw -LiteralPath $path -ErrorAction Stop | ConvertFrom-Json).games.curfewDays } catch { $null } }
+    if ($cd) { $out.games.curfewDays = @($DayNames | Where-Object { @($cd) -contains $_ }) }
   }
   # Calendar: editors send only url + prefix. Keep the last sync if the link didn't change.
   $cal = $s.calendar

@@ -20,7 +20,7 @@ Both read `chrome-extension/schedule.json`, so the extension and the PC app alwa
 
 - **Study blocks:** YouTube, YouTube Music and anime sites redirect to a "Not now" page; games close (with a 5-minute warning first).
 - **Earn mode** (on by default): outside blocks, those sites stay locked until you tick today's main task.
-- **Games** stay closed until the daily unlock time (`games.freeAfter`) and close again at the curfew (`games.curfew`). A curfew earlier than the unlock time, like `01:30`, counts as the end of the previous night.
+- **Games** stay closed until the daily unlock time (`games.freeAfter`) and close again at the curfew (`games.curfew`). A curfew earlier than the unlock time, like `01:30`, counts as the end of the previous night. `games.curfewDays` (e.g. `["Mon","Tue","Wed","Thu","Fri"]`) limits it to those nights; leave it out for every night.
 - **Emergency pass:** 10 minutes for sites, 15 for games, once a day, and you have to type a sentence.
 
 ## Changing the schedule

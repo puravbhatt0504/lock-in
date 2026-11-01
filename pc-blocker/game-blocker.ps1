@@ -76,13 +76,21 @@ function Get-Reason($now, $s) {
     $free = $s.games.freeAfter.$dow; $c = $s.games.curfew
     if (Test-LateCurfew $now $s) {
       # After-midnight curfew (e.g. 01:30): last night's free time runs on until it, then games stay shut until today's unlock.
+      # It belongs to last night, so last night's day decides whether it applies.
       if ($now -lt (At $now $c)) { return $null }
-      if ($now.Hour -lt 6) { return "Curfew $c. Sleep, the morning block is at 10:00" }
+      if ($now.Hour -lt 6) { if (Get-Curfew $now.AddDays(-1) $s) { return "Curfew $c. Sleep, the morning block is at 10:00" } else { return $null } }
     }
     if ($free -and $free -ne '00:00' -and $now -lt (At $now $free)) { return "Games unlock at $free today" }
-    if ($c -and -not (Test-LateCurfew $now $s) -and $now -ge (At $now $c)) { return "Curfew $c. Sleep, the morning block is at 10:00" }
+    if ((Get-Curfew $now $s) -and -not (Test-LateCurfew $now $s) -and $now -ge (At $now $c)) { return "Curfew $c. Sleep, the morning block is at 10:00" }
   }
   return $null
+}
+
+function Get-Curfew($day, $s) {
+  # Curfew time for the night that starts on $day, or $null. games.curfewDays limits the nights (missing = every night).
+  $c = $s.games.curfew
+  if ($c -and $s.games.curfewDays -and @($s.games.curfewDays) -notcontains (Dow $day)) { return $null }
+  return $c
 }
 
 function Test-LateCurfew($now, $s) {
@@ -214,7 +222,8 @@ function Get-TodayRows($now) {
       $t = At $now $free
       $rows += [pscustomobject]@{ at = $t; time = $free; label = 'Games unlock'; tag = $(if ($now -ge $t) { 'done' } else { 'later' }) }
     }
-    if ($s.games.curfew) {
+    $night = if (Test-LateCurfew $now $s) { $now.AddDays(-1) } else { $now }
+    if (Get-Curfew $night $s) {
       $t = At $now $s.games.curfew
       $tag = if ($now -lt $t) { 'later' } elseif (Test-LateCurfew $now $s) { 'done' } else { 'now' }
       $rows += [pscustomobject]@{ at = $t; time = $s.games.curfew; label = 'Curfew, games close'; tag = $tag }

@@ -35,6 +35,8 @@ The day-by-day study plan (tasks, video and PDF links) lives in `chrome-extensio
 `chrome-extension/practice/` holds original IELTS Academic practice material, linked from the plan days that use it:
 
 - **Reading Tests 1–8** (`reading.html?n=1…8`): 3 passages, 40 questions in the current question types, a 60-minute timer, and marking with the official raw-score-to-band table. Passages are shorter than the real exam (about 450–550 words, the real ones run 700–900), so real tests feel longer.
+- **Listening Tests 1–8** (`listening.html?n=1…8`): 4 parts, 40 questions, read aloud by the browser's built-in voices with the usual reading pauses, marked with the Listening band table, transcripts after you submit. The recordings are shorter than the real exam (about 8–11 minutes of speech) and the voices sound synthetic, with no range of accents.
+- **Speaking sets 1–4** (`speaking.html?n=1…4`): the browser voice asks Part 1 and Part 3 questions one at a time, and Part 2 has the 1-minute prep and 2-minute talk timer. Record yourself on your phone and mark it against the descriptors.
 - **Writing Task 1 sets 1–7 and Task 2 sets 1–11** (`writing.html?task=1|2&n=…`): charts and tables drawn on the page, a 20/40-minute timer and autosave. **Check my writing** flags word count, missing overview or position, repeated words, common learner errors, informal words and mechanical linkers. It isn't a band score: **Copy for Claude to mark** builds a full examiner prompt, and **Save to a file** puts the task and your answer in Downloads.
 
 `chrome-extension/material/` (git-ignored) holds local files the plan links to: the official band descriptor PDFs and the two listening mocks.

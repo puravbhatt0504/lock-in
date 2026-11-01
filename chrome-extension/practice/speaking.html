@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Speaking practice</title>
+<link rel="stylesheet" href="practice.css">
+<style>.ql li { margin:6px 0; } .ql li.now { font-weight:700; } .ql li.done { color:var(--soft); }</style>
+</head>
+<body>
+<header>
+  <h1 id="title">IELTS Speaking</h1>
+  <nav id="pick"></nav>
+  <span id="clock"></span>
+</header>
+<main style="max-width:900px">
+  <p class="muted">3 parts · 11–14 minutes. Start a voice recorder on your phone first. Press <b>Ask the next question</b> and the browser's voice asks it like an examiner; answer out loud before you press again. Then play the recording back and mark it with the <a href="../material/IELTS_speaking_band_descriptors.pdf">speaking band descriptors</a>, listening for fillers, long pauses, repeated words and tense mistakes.</p>
+  <h3>Part 1 · Introduction and interview (4–5 minutes)</h3>
+  <p class="muted">Answer in 2–3 sentences: the answer, a reason, an example.</p>
+  <ol class="ql" id="p1"></ol>
+  <div class="bar"><button class="go" id="ask1">Ask the next question</button></div>
+  <h3>Part 2 · Long turn (3–4 minutes)</h3>
+  <div class="card2" id="card"></div>
+  <div class="bar"><button class="go" id="prep">Start: 1 minute to prepare, then 2 minutes to talk</button><span id="status"></span></div>
+  <p class="muted" id="follow"></p>
+  <h3>Part 3 · Discussion (4–5 minutes)</h3>
+  <p class="muted">Longer answers: give your view, explain it, compare or give an example, and consider another side.</p>
+  <ol class="ql" id="p3"></ol>
+  <div class="bar"><button class="go" id="ask3">Ask the next question</button></div>
+</main>
+<script src="speaking.js"></script>
+</body>
+</html>

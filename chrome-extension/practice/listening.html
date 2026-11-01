@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Listening practice</title>
+<link rel="stylesheet" href="practice.css">
+</head>
+<body>
+<header>
+  <h1 id="title">IELTS Listening</h1>
+  <nav id="pick"></nav>
+  <span id="clock"></span>
+</header>
+<main style="max-width:900px">
+  <p class="muted">4 parts · 40 questions · about 30 minutes. The recording is read by your browser's built-in voices and plays once, with time to read the questions before each section, as in the real test. Write answers as you listen; spelling and word limits count. Answers save as you type.</p>
+  <div class="bar">
+    <button class="go" id="play">Start the Listening test</button>
+    <label class="muted">from <select id="from"><option value="0">Part 1</option><option value="1">Part 2</option><option value="2">Part 3</option><option value="3">Part 4</option></select></label>
+    <label class="muted">speed <select id="rate"><option value="0.9">slower</option><option value="1" selected>normal</option><option value="1.1">faster</option></select></label>
+    <button class="ghost" id="stop" disabled>Stop</button>
+    <span id="status"></span>
+  </div>
+  <div id="body"></div>
+  <div class="bar"><button class="go" id="submit">Submit and mark</button><button class="ghost" id="reset">Clear this test</button></div>
+  <div id="score"></div>
+  <div id="scripts"></div>
+</main>
+<script src="listen-a.js"></script>
+<script src="listen-b.js"></script>
+<script src="listen-c.js"></script>
+<script src="listen-d.js"></script>
+<script src="listening.js"></script>
+</body>
+</html>

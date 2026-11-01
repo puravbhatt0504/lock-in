@@ -29,11 +29,13 @@ $('phrase').textContent = PHRASE;
 
   const plan = F.PLAN[F.ymd(now)];
   $('task').textContent = plan ? plan.main : 'No plan task today.';
-  (plan && plan.v || []).forEach((n) => {
+  const steps = (plan && plan.steps) || [];
+  const all = (k) => [...new Set([...(plan && plan[k] || []), ...steps.flatMap((st) => st[k] || [])])];
+  all('v').forEach((n) => {
     const a = Object.assign(document.createElement('a'), { className: 'chip', href: F.videoUrl(n), textContent: `#${n} ${F.VIDEOS[n][1]}` });
     $('vids').append(a);
   });
-  (plan && plan.l || []).forEach((k) => {
+  all('l').forEach((k) => {
     $('vids').append(Object.assign(document.createElement('a'), { className: 'chip', href: F.LINKS[k][1], textContent: F.LINKS[k][0] }));
   });
 

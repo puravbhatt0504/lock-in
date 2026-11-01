@@ -48,6 +48,7 @@ function render() {
     $('weektitle').textContent = 'Today';
     const d = store.done[today] || {};
     tasks.append(taskRow('main', 'Main task', plan.main, !!d.main, plan.v || [], plan.l || []));
+    (plan.steps || []).forEach((st, i) => tasks.append(taskRow('s' + i, st.at, st.t, !!d['s' + i], st.v || [], st.l || [])));
     if (!plan.noLock && plan.am !== false) tasks.append(taskRow('am', 'Morning · 10:00', F.MORNING, !!d.am, []));
   } else {
     $('weektitle').textContent = 'No plan task today';
@@ -65,7 +66,7 @@ function render() {
   $('progress-side').textContent = missed ? `${missed} missed` : 'None missed';
   const last = store.mocks[store.mocks.length - 1];
   $('lastmock').textContent = last ? F.ieltsOverall(last.l, last.r, last.w, last.s).toFixed(1) : '–';
-  $('lastmock-side').textContent = last ? fmtDate(last.date) : 'Diagnostic: Sat 31 Oct';
+  $('lastmock-side').textContent = last ? fmtDate(last.date) : 'Diagnostic: Sun 1 Nov';
 
   renderWeeks(today);
   renderMocks();
@@ -128,7 +129,7 @@ function renderWeeks(today) {
 
 function renderMocks() {
   const box = $('mocks'); box.replaceChildren();
-  if (!store.mocks.length) { box.append(el('p', { className: 'empty' }, 'No mocks yet. Your cold diagnostic is on Sat 31 Oct. Add the four band scores here afterwards.')); return; }
+  if (!store.mocks.length) { box.append(el('p', { className: 'empty' }, 'No mocks yet. Your cold diagnostic is on Sun 1 Nov. Add the four band scores here afterwards.')); return; }
   [...store.mocks].map((m, i) => [m, i]).reverse().forEach(([m, i]) => {
     const o = F.ieltsOverall(m.l, m.r, m.w, m.s);
     const ok = o >= 7.5 && Math.min(m.l, m.r, m.w, m.s) >= 7;
@@ -150,6 +151,8 @@ function taskRow(key, label, text, checked, vids, links = []) {
   box.onchange = () => {
     const today = F.ymd(new Date());
     store.done[today] = Object.assign({}, store.done[today], { [key]: box.checked });
+    const steps = (F.PLAN[today] && F.PLAN[today].steps) || [];
+    if (key[0] === 's' && steps.length && steps.every((_, i) => store.done[today]['s' + i])) store.done[today].main = true;
     chrome.storage.local.set({ done: store.done });
   };
   const chips = vids.length || links.length ? el('div', { className: 'chips' }, [

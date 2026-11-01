@@ -207,10 +207,18 @@
   const ID_ALT = IDS.join('|'); // '-' and '_' are literal outside a character class
   const YT_RE = '^https?://([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be)/.*';
   const YT_ALLOW_RE = `^https?://((www|m)\\.)?youtube\\.com/(watch\\?([^#]*&)?v=(${ID_ALT})([&#].*)?$|playlist\\?|feed/playlists)|^https?://youtu\\.be/(${ID_ALT})`;
-  const ANIME_RE = '^https?://([a-z0-9-]+\\.)*[a-z0-9-]*(anime|aniwatch|aniwave|anitaku|zoro|crunchyroll|kaido|anix)[a-z0-9-]*(\\.[a-z]{2,})+(:[0-9]+)?/.*';
-
   // Chrome rejects a rule regex that compiles too big, so long word lists become several rules of a few words each.
   const chunk = (a, n) => (a.length ? [a.slice(0, n), ...chunk(a.slice(n), n)] : []);
+  // Anime and manga sites (official and pirate): a word anywhere in the host, or at the start of a label (kaas.to)
+  const ANIME_RES = [
+    ...chunk(['anime', 'aniwatch', 'aniwave', 'anitaku', 'anix', 'kaido', 'zoro', 'crunchyroll', 'miruro', 'anikai', 'anicrush', 'aniplay',
+      'anidap', 'anikoto', 'aniyae', 'anitube', 'otaku', 'samehadaku', 'subsplease', 'erai-raws', 'tokyoinsider', 'hentai', 'wcofun', 'cartoon',
+      'manhwa', 'manhua', 'mangadex', 'mangakakalot', 'manganato', 'manganelo', 'mangafire', 'mangapark', 'mangasee', 'mangareader', 'readmanga',
+      'mangabuddy', 'mangaowl', 'mangahere', 'mangatown', 'mangago', 'manga4life', 'asurascan', 'asuracomic', 'reaperscans', 'flamescans',
+      'toonily', 'comick'], 6)
+      .map((w) => `^https?://[^/]*(${w.join('|')})[^/]*/.*`),
+    `^https?://([^/]*\\.)?(kaas|9anime)[^/]*/.*`,
+  ];
   // Movie/TV streaming and piracy sites by name: a word anywhere in the host, or at the start of a label (dulo.gd, yts.mx, not "modulo")
   const STREAM_RES = [
     ...chunk(['movie', 'flix', 'film', 'tvshow', 'watchseries', 'soap2day', 'putlocker', 'primewire', 'cineb', 'hdtoday', 'hurawatch', 'tinyzone',
@@ -222,20 +230,23 @@
   // Video hosts that pirate sites embed their players from (label is the name, digits allowed). The sites' domains rotate; these mostly don't.
   const EMBED_RES = chunk(['vidsrc', 'vidplay', 'vidlink', 'vidcloud', 'vidmoly', 'vidhide', 'vidguard', 'vidstream', 'megacloud', 'rabbitstream',
     'dokicloud', 'streamtape', 'streamwish', 'streamsb', 'filemoon', 'mixdrop', 'upstream', 'lulustream', 'dood', 'doods', 'd0+d', 'ds2play', 'voe',
-    '2embed', 'autoembed', 'multiembed', 'embedsu', 'smashystream', 'kwik', 'mcloud', 'vixcloud'], 6)
+    '2embed', 'autoembed', 'multiembed', 'embedsu', 'smashystream', 'kwik', 'mcloud', 'vixcloud',
+    // anime players
+    'rapid-cloud', 'vidstreaming', 'gogoplay', 'gogocdn', 'playtaku', 'embtaku', 'mp4upload', 'streamlare', 'filelions', 'vidwish', 'awish',
+    'dwish', 'alions', 'streamhg', 'megaplay'], 6)
     .map((w) => `^https?://([^/]*\\.)?(${w.join('|')})[0-9]*\\.[^/]*/.*`);
   // Never judged by content (study, search and reference sites that talk about films and episodes)
   const SAFE_HOST_RE = /(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|wikipedia\.org|imdb\.com|reddit\.com|github\.com|stackoverflow\.com|notion\.so|chatgpt\.com|openai\.com|claude\.ai|anthropic\.com|ielts\.org|ielts\.idp\.com|idp\.com|britishcouncil\.[a-z.]+|cambridge\.org|cambridgeenglish\.org)$/i;
 
   const isAllowedYouTube = (url) => new RegExp(YT_ALLOW_RE, 'i').test(url);
   const isYouTube = (url) => new RegExp(YT_RE, 'i').test(url);
-  const isAnime = (url) => new RegExp(ANIME_RE, 'i').test(url);
+  const isAnime = (url) => ANIME_RES.some((re) => new RegExp(re, 'i').test(url));
   const isStream = (url) => STREAM_RES.some((re) => new RegExp(re, 'i').test(url));
   const isEmbed = (url) => EMBED_RES.some((re) => new RegExp(re, 'i').test(url));
   const isSafeHost = (host) => SAFE_HOST_RE.test(host);
 
   // Unknown domains: does the page itself read like a free movie/TV/anime site? Each distinct sign is a point.
-  const STREAM_BRANDS = /\b(dulo|123movies|fmovies|soap2day|putlocker|solarmovie|yesmovies|gomovies|lookmovie|myflixer|flixhq|sflix|hdtoday|hurawatch|primewire|braflix|cineb|dramacool|kissasian|hianime|gogoanime|9anime|aniwatch|kissanime|animepahe|vegamovies|filmyzilla|filmywap|hdhub4u|moviesflix|tamilmv|tamilrockers|tamilblasters|isaimini|bolly4u|mkvcinemas)\b/i;
+  const STREAM_BRANDS = /\b(dulo|123movies|fmovies|soap2day|putlocker|solarmovie|yesmovies|gomovies|lookmovie|myflixer|flixhq|sflix|hdtoday|hurawatch|primewire|braflix|cineb|dramacool|kissasian|hianime|gogoanime|9anime|aniwatch|kissanime|animepahe|vegamovies|filmyzilla|filmywap|hdhub4u|moviesflix|tamilmv|tamilrockers|tamilblasters|isaimini|bolly4u|mkvcinemas|animekai|kickassanime|animesuge|miruro|anitaku|animeflv|jkanime|otakudesu|samehadaku|zoro\.to|mangadex|mangakakalot|manganato|mangafire|asura\s?scans)\b/i;
   const STREAM_SIGNS = [
     /\bwatch\s+(free\s+)?(movies|films|tv|series|anime|shows|cartoons|k-?dramas?)\b/i,
     /\bfree\s+(movies|films|streaming|anime|tv|series|shows)\b/i,
@@ -249,6 +260,10 @@
     /\bno\s+(sign\s?-?up|registration|account)\b/i,
     /\b(download|watch)\b[^.|]{0,20}\b(480p|720p|1080p|2160p)\b/i,
     /\b(web-?dl|hdrip|bluray|brrip|camrip|dvdrip|dual audio|x264|x265)\b/i,
+    /\banime\b[^.|]{0,20}\b(online|free|list|schedule|sub|dub|movies)\b|\b(ongoing|airing|completed)\s+anime\b/i,
+    /\bread\s+(manga|manhwa|manhua|webtoons?)\b/i,
+    /\b(manga|manhwa|manhua)\s+(online|free|list|updates?)\b/i,
+    /\bchapter\s+\d{2,}\b/i,
   ];
   const STREAM_MIN = 3;
   // page: { title, text (meta + headings + nav, joined with ' | '), frames: [iframe src], bigVideo }
@@ -266,8 +281,8 @@
     return [
       { id: 1, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=youtube#\\0' } },
         condition: { regexFilter: YT_RE, resourceTypes: ['main_frame'] } },
-      { id: 2, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=anime#\\0' } },
-        condition: { regexFilter: ANIME_RE, resourceTypes: ['main_frame'] } },
+      ...ANIME_RES.map((re, i) => ({ id: 300 + i, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=anime#\\0' } },
+        condition: { regexFilter: re, resourceTypes: ['main_frame'] } })),
       ...STREAM_RES.map((re, i) => ({ id: 100 + i, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=stream#\\0' } },
         condition: { regexFilter: re, resourceTypes: ['main_frame'] } })),
       // Players embedded from known video hosts don't load, whatever site they sit on

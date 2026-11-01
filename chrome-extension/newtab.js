@@ -179,10 +179,3 @@ chrome.storage.onChanged.addListener(load);
 setInterval(render, 30000);
 load();
 
-// Pages can't follow file:// links; the tabs API can, once "Allow access to file URLs" is on.
-document.addEventListener('click', (e) => {
-  const a = e.target.closest('a[href^="file:"]');
-  if (!a) return;
-  e.preventDefault();
-  chrome.tabs.update({ url: a.href }).catch(() => alert('To open the mocks: chrome://extensions → IELTS Focus → Details → turn on "Allow access to file URLs".'));
-});

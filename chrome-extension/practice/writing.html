@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Writing practice</title>
+<link rel="stylesheet" href="practice.css">
+</head>
+<body>
+<header>
+  <h1 id="title">IELTS Academic Writing</h1>
+  <nav id="pick"></nav>
+  <span id="clock"></span>
+</header>
+<main style="max-width:900px">
+  <div class="grp">
+    <div class="t" id="ttl"></div>
+    <p id="intro"></p>
+    <p><b id="ask"></b></p>
+    <div id="chart"></div>
+  </div>
+  <div class="bar"><button class="go" id="start"></button><span class="muted">Drafts save automatically. The browser underlines spelling mistakes as you type.</span></div>
+  <textarea id="essay" spellcheck="true" placeholder="Write your answer here…"></textarea>
+  <div class="wc" id="wc"></div>
+  <div class="bar">
+    <button class="go" id="check">Check my writing</button>
+    <button class="ghost" id="copy">Copy for Claude to mark</button>
+    <button class="ghost" id="save">Save to a file</button>
+    <span class="muted" id="msg"></span>
+  </div>
+  <div id="review"></div>
+  <p class="muted">Official criteria: <a href="../material/IELTS_writing_band_descriptors.pdf">Writing band descriptors (PDF)</a>. Task 2 counts twice as much as Task 1 in your Writing band.</p>
+</main>
+<script src="prompts.js"></script>
+<script src="writing.js"></script>
+</body>
+</html>

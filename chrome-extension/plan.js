@@ -25,8 +25,8 @@
   const DM = 'https://www.d-mat.de/wp-content/uploads/2026/09/';
   const DM_PDF = DM + '260902_dMAT_General-Academic-Module_Preparatoy-Materials_EN.pdf#page=';
   const TA_PDF = 'https://testas.de/fileadmin/bilder/4_pdf-video/1-teilnehmende/230531_digitalertestas_preparatory_materials.pdf#page=';
-  // Mocks live on disk; file:// links need "Allow access to file URLs" on the extension.
-  const MOCKS = 'file:///E:/Projects/lock%20in%20extension/study-material/ielts/';
+  // Study files ship inside the extension (chrome-extension/material/, git-ignored), so links open without file:// access.
+  const MOCKS = 'material/';
   const LINKS = {
     intro: ['Video: how the dMAT works', DM + '260908_General-Introduction_dMAT.mp4'],
     fsv: ['Video: Figure Sequences', DM + '260908_FS-dMAT-Introduction-2.mp4'],
@@ -54,16 +54,21 @@
     reg: ['Register (g.a.s.t.)', 'https://www.gast.de/portal/center-search/center-search/dmat/exams/worldwide?lang=en'],
   };
 
+  // Original practice tests in practice/: Reading Tests 1–8, Writing Task 1 sets 1–7 and Task 2 sets 1–11.
+  for (let n = 1; n <= 8; n++) LINKS['r' + n] = [`Reading Test ${n} (practice)`, `practice/reading.html?n=${n}`];
+  for (let n = 1; n <= 7; n++) LINKS['wa' + n] = [`Writing Task 1 · set ${n}`, `practice/writing.html?task=1&n=${n}`];
+  for (let n = 1; n <= 11; n++) LINKS['wb' + n] = [`Writing Task 2 · set ${n}`, `practice/writing.html?task=2&n=${n}`];
+
   const MORNING = 'Speaking Part 2 long turn (1 min prep, 2 min talk), record and replay + 10 min mistakes log';
 
   // date -> { main, v: [playlist #s], l: [LINKS keys], week, noLock, steps: [{ at, t, v, l }] }
   // steps: multi-part days split into one tickable row per part; ticking them all ticks main.
   const PLAN = {
-    '2026-11-01': { week: 1, am: false, main: 'COLD DIAGNOSTIC 17:00–20:45: Speaking, then Cambridge 19 Test 1 Listening + Reading + Writing. Real conditions, no pauses, no phone', steps: [
+    '2026-11-01': { week: 1, am: false, main: 'COLD DIAGNOSTIC 17:00–20:45: Speaking, then Listening (Cambridge 19 Test 1) + Reading Test 1 + Writing. Real conditions, no pauses, no phone', steps: [
       { at: '17:00 · Speaking', t: 'Record Speaking Parts 1–3 (answer along with the mock video), replay once', v: [17], l: ['sbd'] },
       { at: '17:20 · Listening', t: 'Cambridge 19 Test 1 Listening, 30 min, play once only', v: [9] },
-      { at: '17:55 · Reading', t: 'Cambridge 19 Test 1 Reading, 60 min (book)' },
-      { at: '19:00 · Writing', t: 'Cambridge 19 Test 1 Writing: Task 1 (20 min) + Task 2 (40 min)', l: ['wbd'] },
+      { at: '17:55 · Reading', t: 'Practice Reading Test 1, 60 min', l: ['r1'] },
+      { at: '19:00 · Writing', t: 'Writing Task 1 (20 min) + Task 2 (40 min), then Check my writing', l: ['wa1', 'wb1'] },
       { at: '20:05 · Mark', t: 'Mark L/R, convert to bands, note the weakest section, start a mistakes log', l: ['score'] },
     ] },
     '2026-11-02': { week: 2, main: 'Passport appointment 10:00. Evening: watch #1 Band 9 reading strategy + #2 True/False/Not Given + #3 Matching Headings. Book the IELTS the day your passport arrives', steps: [
@@ -72,25 +77,25 @@
       { at: 'Evening · Watch', t: '#2 True / False / Not Given', v: [2] },
       { at: 'Evening · Watch', t: '#3 Matching Headings', v: [3] },
     ] },
-    '2026-11-03': { week: 2, main: 'Read the Writing + Speaking band descriptors (Band 7 vs 8). Watch #4 (Task 1); write Task 1 (Cambridge 19 Test 2), 20 min', steps: [
+    '2026-11-03': { week: 2, main: 'Read the Writing + Speaking band descriptors (Band 7 vs 8). Watch #4 (Task 1); write Task 1, 20 min', steps: [
       { at: 'Read', t: 'Writing + Speaking band descriptors: what separates Band 7 from 8', l: ['wbd', 'sbd'] },
       { at: 'Watch', t: '#4 Writing Task 1', v: [4] },
-      { at: 'Write', t: 'Task 1, Cambridge 19 Test 2, 20 min' },
+      { at: 'Write', t: 'Task 1, 20 min', l: ['wa2'] },
     ] },
     '2026-11-04': { week: 2, main: 'Watch #5 (Task 2); Task 2 essay #1, timed 40 min', steps: [
       { at: 'Watch', t: '#5 Band 9 Task 2 essay', v: [5] },
-      { at: 'Write', t: 'Task 2 essay #1, timed 40 min' },
+      { at: 'Write', t: 'Task 2 essay #1, timed 40 min', l: ['wb2'] },
     ] },
     '2026-11-05': { week: 2, main: 'Listening Cambridge 19 Test 2, timed + review misses with transcript', steps: [
       { at: 'Listening', t: 'Cambridge 19 Test 2, timed, play once only', v: [10] },
       { at: 'Review', t: 'Go through every miss with the transcript' },
     ] },
     '2026-11-06': { week: 2, main: 'Task 2 essay #2 + Task 1 #2, timed', steps: [
-      { at: 'Write', t: 'Task 2 essay #2, timed 40 min' },
-      { at: 'Write', t: 'Task 1 #2, timed 20 min' },
+      { at: 'Write', t: 'Task 2 essay #2, timed 40 min', l: ['wb3'] },
+      { at: 'Write', t: 'Task 1 #2, timed 20 min', l: ['wa3'] },
     ] },
-    '2026-11-07': { week: 2, main: 'Reading Cambridge 19 Test 2, timed 60 min + review', steps: [
-      { at: 'Reading', t: 'Cambridge 19 Test 2, timed 60 min (book)' },
+    '2026-11-07': { week: 2, main: 'Practice Reading Test 2, timed 60 min + review', steps: [
+      { at: 'Reading', t: 'Practice Reading Test 2, timed 60 min', l: ['r2'] },
       { at: 'Review', t: 'Go through every wrong answer and find the line that proves it' },
     ] },
     '2026-11-08': { week: 2, main: 'Watch #6 + #7 speaking tests (note how Band 9 answers extend). Task 2 essay #3 = Mock 1 Writing Task 2 (40 min); compare all three essays with the descriptors', steps: [
@@ -103,8 +108,8 @@
       { at: 'Listening', t: 'Cambridge 19 Test 3, timed, play once only', v: [11] },
       { at: 'Review', t: 'Go through every miss with the transcript' },
     ] },
-    '2026-11-10': { week: 3, main: 'Reading Cambridge 19 Test 3, timed + review', steps: [
-      { at: 'Reading', t: 'Cambridge 19 Test 3, timed 60 min (book)' },
+    '2026-11-10': { week: 3, main: 'Practice Reading Test 3, timed + review', steps: [
+      { at: 'Reading', t: 'Practice Reading Test 3, timed 60 min', l: ['r3'] },
       { at: 'Review', t: 'Go through every wrong answer' },
     ] },
     '2026-11-11': { week: 3, main: 'Full Speaking mock, recorded (Parts 1–3); replay for fillers and pauses', steps: [
@@ -112,23 +117,23 @@
       { at: 'Review', t: 'Replay it and note fillers and pauses', l: ['sbd'] },
     ] },
     '2026-11-12': { week: 3, main: 'Task 2 essay #4 + Task 1 #3 = Mock 1 Writing Task 1 (bar chart)', steps: [
-      { at: 'Write', t: 'Task 2 essay #4, timed 40 min' },
+      { at: 'Write', t: 'Task 2 essay #4, timed 40 min', l: ['wb4'] },
       { at: 'Write', t: 'Task 1 #3 = Mock 1 Writing Task 1 (bar chart), 20 min', l: ['m1'] },
     ] },
     '2026-11-13': { week: 3, main: 'Listening Cambridge 19 Test 4, timed + review', steps: [
       { at: 'Listening', t: 'Cambridge 19 Test 4, timed, play once only', v: [12] },
       { at: 'Review', t: 'Go through every miss with the transcript' },
     ] },
-    '2026-11-14': { week: 3, main: 'Reading Cambridge 19 Test 4, timed + review', steps: [
-      { at: 'Reading', t: 'Cambridge 19 Test 4, timed 60 min (book)' },
+    '2026-11-14': { week: 3, main: 'Practice Reading Test 4, timed + review', steps: [
+      { at: 'Reading', t: 'Practice Reading Test 4, timed 60 min', l: ['r4'] },
       { at: 'Review', t: 'Go through every wrong answer' },
     ] },
     '2026-11-15': { week: 3, main: 'Speaking mock #2 (recorded, Mock 1 Speaking questions) + Task 2 essay #5', steps: [
       { at: 'Speaking', t: 'Speaking mock #2, recorded, Mock 1 Speaking questions', l: ['m1'] },
-      { at: 'Write', t: 'Task 2 essay #5, timed 40 min' },
+      { at: 'Write', t: 'Task 2 essay #5, timed 40 min', l: ['wb5'] },
     ] },
     '2026-11-16': { week: 4, main: 'Task 2 essay #6, then get it marked against the descriptors', steps: [
-      { at: 'Write', t: 'Task 2 essay #6, timed 40 min' },
+      { at: 'Write', t: 'Task 2 essay #6, timed 40 min', l: ['wb6'] },
       { at: 'Review', t: 'Get it marked against the descriptors', l: ['wbd'] },
     ] },
     '2026-11-17': { week: 4, main: 'Rewrite one essay using the feedback + Mock 1 Listening (30 min, auto-marked)', steps: [
@@ -136,18 +141,18 @@
       { at: 'Listening', t: 'Mock 1 Listening, 30 min, auto-marked', l: ['m1'] },
     ] },
     '2026-11-18': { week: 4, main: 'Task 1 #4 + Listening Cambridge 20 Test 1', steps: [
-      { at: 'Write', t: 'Task 1 #4, timed 20 min' },
+      { at: 'Write', t: 'Task 1 #4, timed 20 min', l: ['wa4'] },
       { at: 'Listening', t: 'Cambridge 20 Test 1, timed, play once only', v: [13] },
     ] },
-    '2026-11-19': { week: 4, main: 'Task 2 essay #7' },
+    '2026-11-19': { week: 4, main: 'Task 2 essay #7, timed 40 min', l: ['wb7'] },
     '2026-11-20': { week: 4, main: 'Task 1 #5 + review your mistakes log', steps: [
-      { at: 'Write', t: 'Task 1 #5, timed 20 min' },
+      { at: 'Write', t: 'Task 1 #5, timed 20 min', l: ['wa5'] },
       { at: 'Review', t: 'Read through your mistakes log' },
     ] },
-    '2026-11-21': { week: 4, main: 'FULL MOCK #1 11:00 (L: C20 T2, R: C20 T1, W: C20 T1) + Speaking mock tonight', steps: [
+    '2026-11-21': { week: 4, main: 'FULL MOCK #1 11:00 (Listening C20 T2, Reading Test 5, Writing) + Speaking mock tonight', steps: [
       { at: '11:00 · Listening', t: 'Cambridge 20 Test 2 Listening, 30 min, play once only', v: [14] },
-      { at: '11:35 · Reading', t: 'Cambridge 20 Test 1 Reading, 60 min (book)' },
-      { at: '12:40 · Writing', t: 'Cambridge 20 Test 1 Writing: Task 1 (20 min) + Task 2 (40 min)', l: ['wbd'] },
+      { at: '11:35 · Reading', t: 'Practice Reading Test 5, 60 min', l: ['r5'] },
+      { at: '12:40 · Writing', t: 'Writing Task 1 (20 min) + Task 2 (40 min)', l: ['wa6', 'wb8'] },
       { at: 'Tonight · Speaking', t: 'Speaking mock, recorded (Parts 1–3)', v: [17], l: ['sbd'] },
     ] },
     '2026-11-22': { week: 4, main: 'Score mock #1 per section; list your top 3 weak spots. Then Mock 1 Reading, timed 60 min', steps: [
@@ -155,27 +160,27 @@
       { at: 'Review', t: 'List your top 3 weak spots' },
       { at: 'Reading', t: 'Mock 1 Reading, timed 60 min', l: ['m1'] },
     ] },
-    '2026-11-23': { week: 5, main: 'Task 2 essay #8 (weakest section first all week)' },
+    '2026-11-23': { week: 5, main: 'Task 2 essay #8 (weakest section first all week)', l: ['wb9'] },
     '2026-11-24': { week: 5, main: 'Listening Cambridge 20 Test 3, timed + review', v: [15] },
-    '2026-11-25': { week: 5, main: 'Reading Cambridge 20 Test 2, timed + review' },
+    '2026-11-25': { week: 5, main: 'Practice Reading Test 6, timed 60 min + review', l: ['r6'] },
     '2026-11-26': { week: 5, main: 'Task 2 essay #9 + Task 1 #6 = Mock 2 Writing, both tasks in 60 min; copy them to Claude for marking', steps: [
       { at: 'Writing', t: 'Mock 2 Writing, both tasks in 60 min (Task 1 #6 + Task 2 essay #9)', l: ['m2'] },
       { at: 'Mark', t: 'Copy them to Claude for marking against the descriptors', l: ['wbd'] },
     ] },
     '2026-11-27': { week: 5, main: 'Speaking mock #4, recorded (Mock 2 Speaking questions)', l: ['m2'] },
-    '2026-11-28': { week: 5, main: 'Reading Cambridge 20 Test 3, timed + Speaking mock #5', steps: [
-      { at: 'Reading', t: 'Cambridge 20 Test 3, timed 60 min (book)' },
+    '2026-11-28': { week: 5, main: 'Practice Reading Test 7, timed + Speaking mock #5', steps: [
+      { at: 'Reading', t: 'Practice Reading Test 7, timed 60 min', l: ['r7'] },
       { at: 'Speaking', t: 'Speaking mock #5, recorded' },
     ] },
-    '2026-11-29': { week: 5, main: 'FULL MOCK #2 11:00 (L: C20 T4, R: C20 T4, W: C20 T2)', steps: [
+    '2026-11-29': { week: 5, main: 'FULL MOCK #2 11:00 (Listening C20 T4, Reading Test 8, Writing)', steps: [
       { at: '11:00 · Listening', t: 'Cambridge 20 Test 4 Listening, 30 min, play once only', v: [16] },
-      { at: '11:35 · Reading', t: 'Cambridge 20 Test 4 Reading, 60 min (book)' },
-      { at: '12:40 · Writing', t: 'Cambridge 20 Test 2 Writing: Task 1 (20 min) + Task 2 (40 min)', l: ['wbd'] },
+      { at: '11:35 · Reading', t: 'Practice Reading Test 8, 60 min', l: ['r8'] },
+      { at: '12:40 · Writing', t: 'Writing Task 1 (20 min) + Task 2 (40 min)', l: ['wa7', 'wb10'] },
       { at: 'After · Mark', t: 'Mark L/R, convert to bands, log the scores below', l: ['score'] },
     ] },
     '2026-11-30': { week: 6, main: 'Review mock #2 + final Task 2 essay #10', steps: [
       { at: 'Review', t: 'Review mock #2 section by section' },
-      { at: 'Write', t: 'Final Task 2 essay #10, timed 40 min' },
+      { at: 'Write', t: 'Final Task 2 essay #10, timed 40 min', l: ['wb11'] },
     ] },
     '2026-12-01': { week: 6, main: 'Light: Mock 2 Listening Part 4 + Mock 2 Reading Passage 1', steps: [
       { at: 'Listening', t: 'Mock 2 Listening Part 4', l: ['m2'] },
@@ -264,6 +269,13 @@
     '2027-01-15': { week: 12, am: false, main: 'Rest. Pack passport. Early night', noLock: true },
     '2027-01-16': { week: 12, am: false, main: 'dMAT TEST DAY', noLock: true },
   };
+
+  // Reading and Writing parts also get the matching strategy video, unless they already use a mock.
+  const RES = [[/Reading/, 8], [/Task 1/, 4], [/Task 2|essay/i, 5]];
+  for (const day of Object.values(PLAN)) for (const p of day.steps || [day]) {
+    if ((p.l || []).some((k) => k === 'm1' || k === 'm2')) continue;
+    for (const [re, v] of RES) if (re.test(p.t || p.main)) p.v = [...new Set([...(p.v || []), v])];
+  }
 
   const WEEK_TITLES = {
     1: 'Cold diagnostic', 2: 'Strategy + writing structure', 3: 'Speaking + timed sections',

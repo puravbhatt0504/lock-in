@@ -4,14 +4,13 @@
   "name": "IELTS Focus",
   "version": "1.0.0",
   "description": "Blocks YouTube, anime and movie/TV streaming sites during IELTS study blocks (plan videos stay allowed). New tab shows today's task, streak and mock scores.",
-  "permissions": ["storage", "alarms", "nativeMessaging", "declarativeNetRequest", "tabs"],
+  "permissions": ["storage", "alarms", "nativeMessaging", "declarativeNetRequest", "tabs", "scripting"],
   "host_permissions": ["*://*/*"],
   "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
   "background": { "service_worker": "background.js" },
   "chrome_url_overrides": { "newtab": "newtab.html" },
   "content_scripts": [
-    { "matches": ["*://*.youtube.com/*"], "js": ["plan.js", "content.js"], "run_at": "document_start" },
-    { "matches": ["http://*/*", "https://*/*"], "exclude_matches": ["*://*.youtube.com/*"], "js": ["plan.js", "stream-detect.js"], "run_at": "document_idle" }
+    { "matches": ["*://*.youtube.com/*"], "js": ["plan.js", "content.js"], "run_at": "document_start" }
   ],
   "web_accessible_resources": [
     { "resources": ["blocked.html"], "matches": ["<all_urls>"] }

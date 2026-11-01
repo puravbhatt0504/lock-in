@@ -7,6 +7,7 @@ pc-blocker/schedule-host.json
 
 # Study material and mocks (downloaded PDFs/videos, personal mocks)
 study-material/
+chrome-extension/material/
 
 # Android build output and local signing key
 phone-blocker/out/

@@ -11,6 +11,15 @@ async function loadSchedule(current) {
 
 let lastBlocked = null;
 
+// The page reader only goes into tabs while blocked, so normal browsing doesn't carry plan.js (~400 KB per tab).
+const DETECT = { id: 'stream-detect', matches: ['http://*/*', 'https://*/*'], excludeMatches: ['*://*.youtube.com/*'],
+  js: ['plan.js', 'stream-detect.js'], runAt: 'document_idle', persistAcrossSessions: false };
+async function setDetector(on) {
+  const has = (await chrome.scripting.getRegisteredContentScripts({ ids: [DETECT.id] })).length > 0;
+  if (on && !has) await chrome.scripting.registerContentScripts([DETECT]);
+  if (!on && has) await chrome.scripting.unregisterContentScripts({ ids: [DETECT.id] });
+}
+
 async function refresh() {
   const store = await chrome.storage.local.get(null);
   const schedule = await loadSchedule(store.schedule).catch(() => store.schedule);
@@ -23,6 +32,7 @@ async function refresh() {
         removeRuleIds: existing.map((r) => r.id),
         addRules: state.blocked ? F.dnrRules(BLOCKED_PAGE, store.learned || []) : [],
       });
+      await setDetector(state.blocked);
       lastBlocked = state.blocked;
     } catch (e) {
       console.error('IELTS Focus: could not update block rules', e); // tab sweep below still enforces

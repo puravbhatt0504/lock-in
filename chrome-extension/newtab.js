@@ -88,13 +88,13 @@ function renderStatus(schedule, now) {
   if (!st) set('off', 'Loading', 'Reading your schedule…', '');
   else if (st.block && !st.pass) {
     const b = st.block, span = b.endAt - b.startAt;
-    set('block', 'Study block', b.label, `YouTube, anime and games are blocked until ${b.end}. Plan videos still open.`);
+    set('block', 'Study block', b.label, `YouTube, anime, streaming sites and games are blocked until ${b.end}. Plan videos still open.`);
     $('st-bar').style.width = Math.min(100, (now - b.startAt) / span * 100) + '%';
     $('st-span').textContent = `${b.start} – ${b.end}`;
     $('st-left').textContent = `${Math.ceil((b.endAt - now) / 60000)} min left`;
     $('st-prog').hidden = false;
   } else if (st.lockedFreeTime && !st.pass) {
-    set('lock', 'Earn mode', 'Tick today’s main task to unlock free time', 'YouTube and anime stay locked until it’s done.');
+    set('lock', 'Earn mode', 'Tick today’s main task to unlock free time', 'YouTube, anime and streaming sites stay locked until it’s done.');
   } else if (st.active) {
     set('free', st.pass ? 'Emergency pass' : 'Free time', st.pass ? 'Emergency pass active' : 'Free time. You earned it.', 'Nothing is blocked right now.');
   } else {

@@ -6,7 +6,7 @@ const rawOriginal = location.hash.slice(1);
 const original = /^https?:\/\//i.test(rawOriginal) ? rawOriginal : '';
 document.getElementById('typed').addEventListener('paste', (e) => e.preventDefault()); // type it, don't paste it
 
-$('site').textContent = params.get('site') === 'anime' ? 'Anime sites blocked' : 'YouTube blocked';
+$('site').textContent = { anime: 'Anime sites blocked', stream: 'Streaming sites blocked' }[params.get('site')] || 'YouTube blocked';
 $('phrase').textContent = PHRASE;
 
 (async () => {

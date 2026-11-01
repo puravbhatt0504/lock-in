@@ -18,7 +18,8 @@ Both read `chrome-extension/schedule.json`, so the extension and the PC app alwa
 
 ## How blocking works
 
-- **Study blocks:** YouTube, YouTube Music and anime sites redirect to a "Not now" page; games close (with a 5-minute warning first).
+- **Study blocks:** YouTube, YouTube Music, anime and movie/TV streaming sites redirect to a "Not now" page; games close (with a 5-minute warning first).
+  Streaming and piracy sites are caught three ways, since their domains keep changing: by name (`fmovies`, `dulo`, `yts`, `…movies…`, `…flix…`), by the video hosts their players come from (vidsrc, megacloud, streamtape, …), and by reading the page during a block (`stream-detect.js`: "watch free movies", episode lists, embedded players). A domain caught by its page is remembered and blocked by name after that.
 - **Earn mode** (on by default): outside blocks, those sites stay locked until you tick today's main task.
 - **Games** stay closed until the daily unlock time (`games.freeAfter`) and close again at the curfew (`games.curfew`). A curfew earlier than the unlock time, like `01:30`, counts as the end of the previous night. `games.curfewDays` (e.g. `["Mon","Tue","Wed","Thu","Fri"]`) limits it to those nights; leave it out for every night.
 - **Emergency pass:** 10 minutes for sites, 15 for games, once a day, and you have to type a sentence.

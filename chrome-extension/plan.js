@@ -209,16 +209,72 @@
   const YT_ALLOW_RE = `^https?://((www|m)\\.)?youtube\\.com/(watch\\?([^#]*&)?v=(${ID_ALT})([&#].*)?$|playlist\\?|feed/playlists)|^https?://youtu\\.be/(${ID_ALT})`;
   const ANIME_RE = '^https?://([a-z0-9-]+\\.)*[a-z0-9-]*(anime|aniwatch|aniwave|anitaku|zoro|crunchyroll|kaido|anix)[a-z0-9-]*(\\.[a-z]{2,})+(:[0-9]+)?/.*';
 
+  // Chrome rejects a rule regex that compiles too big, so long word lists become several rules of a few words each.
+  const chunk = (a, n) => (a.length ? [a.slice(0, n), ...chunk(a.slice(n), n)] : []);
+  // Movie/TV streaming and piracy sites by name: a word anywhere in the host, or at the start of a label (dulo.gd, yts.mx, not "modulo")
+  const STREAM_RES = [
+    ...chunk(['movie', 'flix', 'film', 'tvshow', 'watchseries', 'soap2day', 'putlocker', 'primewire', 'cineb', 'hdtoday', 'hurawatch', 'tinyzone',
+      'vumoo', 'dramacool', 'kissasian', 'kisscartoon', 'wcostream', 'iptv', 'torrent', '1337x', 'piratebay', 'rarbg', 'hdhub4u', 'bolly4u',
+      'tamilmv', 'tamilrockers', 'tamilblasters', 'isaimini', 'mkvcinemas', 'worldfree4u', 'khatrimaza', 'streameast', 'crackstreams', 'sportsurge'], 6)
+      .map((w) => `^https?://[^/]*(${w.join('|')})[^/]*/.*`),
+    `^https?://([^/]*\\.)?(dulo|yts|nyaa|gogo|vidsrc|2embed)[^/]*/.*`,
+  ];
+  // Video hosts that pirate sites embed their players from (label is the name, digits allowed). The sites' domains rotate; these mostly don't.
+  const EMBED_RES = chunk(['vidsrc', 'vidplay', 'vidlink', 'vidcloud', 'vidmoly', 'vidhide', 'vidguard', 'vidstream', 'megacloud', 'rabbitstream',
+    'dokicloud', 'streamtape', 'streamwish', 'streamsb', 'filemoon', 'mixdrop', 'upstream', 'lulustream', 'dood', 'doods', 'd0+d', 'ds2play', 'voe',
+    '2embed', 'autoembed', 'multiembed', 'embedsu', 'smashystream', 'kwik', 'mcloud', 'vixcloud'], 6)
+    .map((w) => `^https?://([^/]*\\.)?(${w.join('|')})[0-9]*\\.[^/]*/.*`);
+  // Never judged by content (study, search and reference sites that talk about films and episodes)
+  const SAFE_HOST_RE = /(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|wikipedia\.org|imdb\.com|reddit\.com|github\.com|stackoverflow\.com|notion\.so|chatgpt\.com|openai\.com|claude\.ai|anthropic\.com|ielts\.org|ielts\.idp\.com|idp\.com|britishcouncil\.[a-z.]+|cambridge\.org|cambridgeenglish\.org)$/i;
+
   const isAllowedYouTube = (url) => new RegExp(YT_ALLOW_RE, 'i').test(url);
   const isYouTube = (url) => new RegExp(YT_RE, 'i').test(url);
   const isAnime = (url) => new RegExp(ANIME_RE, 'i').test(url);
+  const isStream = (url) => STREAM_RES.some((re) => new RegExp(re, 'i').test(url));
+  const isEmbed = (url) => EMBED_RES.some((re) => new RegExp(re, 'i').test(url));
+  const isSafeHost = (host) => SAFE_HOST_RE.test(host);
 
-  function dnrRules(blockedPageUrl) {
+  // Unknown domains: does the page itself read like a free movie/TV/anime site? Each distinct sign is a point.
+  const STREAM_BRANDS = /\b(dulo|123movies|fmovies|soap2day|putlocker|solarmovie|yesmovies|gomovies|lookmovie|myflixer|flixhq|sflix|hdtoday|hurawatch|primewire|braflix|cineb|dramacool|kissasian|hianime|gogoanime|9anime|aniwatch|kissanime|animepahe|vegamovies|filmyzilla|filmywap|hdhub4u|moviesflix|tamilmv|tamilrockers|tamilblasters|isaimini|bolly4u|mkvcinemas)\b/i;
+  const STREAM_SIGNS = [
+    /\bwatch\s+(free\s+)?(movies|films|tv|series|anime|shows|cartoons|k-?dramas?)\b/i,
+    /\bfree\s+(movies|films|streaming|anime|tv|series|shows)\b/i,
+    /\b(movies|films)\s*(&|and|,|\/|\|)\s*(tv|series|shows)\b/i,
+    /\b(stream(ing)?|watch)\b[^.|]{0,40}\b(online|in hd|hd|4k|1080p)\b/i,
+    /\biptv\b/i,
+    /\blive tv\b/i,
+    /\b(sub|dub)(bed)?\b[^.|]{0,40}\bep(isode)?s?\b|\bepisode\s+\d+/i,
+    /\b(english|eng)\s+(sub|dub)\b|\bsub\s*(&|and|\/)\s*dub\b/i,
+    /\bseason\s+\d+\b|\bs\d{1,2}\s?e\d{1,3}\b/i,
+    /\bno\s+(sign\s?-?up|registration|account)\b/i,
+    /\b(download|watch)\b[^.|]{0,20}\b(480p|720p|1080p|2160p)\b/i,
+    /\b(web-?dl|hdrip|bluray|brrip|camrip|dvdrip|dual audio|x264|x265)\b/i,
+  ];
+  const STREAM_MIN = 3;
+  // page: { title, text (meta + headings + nav, joined with ' | '), frames: [iframe src], bigVideo }
+  function streamScore(page) {
+    const t = `${page.title || ''} | ${page.text || ''}`;
+    let n = STREAM_SIGNS.filter((re) => re.test(t)).length;
+    if (STREAM_BRANDS.test(t)) n += 2;
+    if ((page.frames || []).some(isEmbed)) n += 3;
+    if (page.bigVideo) n += 1;
+    return n;
+  }
+
+  // learned: hostnames the page check flagged before (blocked by name from then on)
+  function dnrRules(blockedPageUrl, learned = []) {
     return [
       { id: 1, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=youtube#\\0' } },
         condition: { regexFilter: YT_RE, resourceTypes: ['main_frame'] } },
       { id: 2, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=anime#\\0' } },
         condition: { regexFilter: ANIME_RE, resourceTypes: ['main_frame'] } },
+      ...STREAM_RES.map((re, i) => ({ id: 100 + i, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=stream#\\0' } },
+        condition: { regexFilter: re, resourceTypes: ['main_frame'] } })),
+      // Players embedded from known video hosts don't load, whatever site they sit on
+      ...EMBED_RES.map((re, i) => ({ id: 200 + i, priority: 1, action: { type: 'block' },
+        condition: { regexFilter: re, resourceTypes: ['main_frame', 'sub_frame', 'media', 'xmlhttprequest'] } })),
+      ...(learned.length ? [{ id: 7, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=stream#\\0' } },
+        condition: { regexFilter: '^https?://.*', requestDomains: learned, resourceTypes: ['main_frame'] } }] : []),
       // Allow rules use plain urlFilters: one combined regex is over Chrome's 2KB regex limit.
       { id: 3, priority: 2, action: { type: 'allow' },
         condition: { urlFilter: '||youtube.com/playlist?', resourceTypes: ['main_frame'] } },
@@ -246,6 +302,6 @@
   }
 
   root.FOCUS = { VIDEOS, LINKS, MORNING, PLAN, WEEK_TITLES, DOW, ymd, hm, at, addDays, activeBlock, nextBlock, effectiveBlocks,
-    computeState, dnrRules, isAllowedYouTube, isYouTube, isAnime, ieltsOverall, streak,
+    computeState, dnrRules, isAllowedYouTube, isYouTube, isAnime, isStream, isEmbed, isSafeHost, streamScore, STREAM_MIN, ieltsOverall, streak,
     videoUrl: (n) => `https://www.youtube.com/watch?v=${VIDEOS[n][0]}` };
 })(typeof self !== 'undefined' ? self : globalThis);

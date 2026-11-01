@@ -21,7 +21,7 @@ async function refresh() {
       const existing = await chrome.declarativeNetRequest.getDynamicRules();
       await chrome.declarativeNetRequest.updateDynamicRules({
         removeRuleIds: existing.map((r) => r.id),
-        addRules: state.blocked ? F.dnrRules(BLOCKED_PAGE) : [],
+        addRules: state.blocked ? F.dnrRules(BLOCKED_PAGE, store.learned || []) : [],
       });
       lastBlocked = state.blocked;
     } catch (e) {
@@ -31,14 +31,30 @@ async function refresh() {
 
   // Tabs already open on a blocked site get redirected too (DNR only catches new navigations).
   if (state.blocked) {
+    const learned = store.learned || [];
+    const isLearned = (url) => { try { const h = new URL(url).hostname; return learned.some((d) => h === d || h.endsWith('.' + d)); } catch { return false; } };
     const tabs = await chrome.tabs.query({});
     for (const t of tabs) {
       if (!t.url) continue;
-      const site = F.isAnime(t.url) ? 'anime' : (F.isYouTube(t.url) && !F.isAllowedYouTube(t.url)) ? 'youtube' : null;
+      const site = F.isAnime(t.url) ? 'anime' : (F.isYouTube(t.url) && !F.isAllowedYouTube(t.url)) ? 'youtube'
+        : (F.isStream(t.url) || isLearned(t.url)) ? 'stream' : null;
       if (site) chrome.tabs.update(t.id, { url: `${BLOCKED_PAGE}?site=${site}#${t.url}` });
     }
   }
 }
+
+// stream-detect.js flagged a page: block that domain by name from now on
+chrome.runtime.onMessage.addListener((m, sender) => {
+  if (!sender.tab || !m || m.type !== 'stream-site' || typeof m.host !== 'string') return;
+  const host = m.host.toLowerCase().replace(/^www\./, '');
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) return;
+  chrome.storage.local.get('learned').then(async ({ learned = [] }) => {
+    if (learned.includes(host)) return;
+    await chrome.storage.local.set({ learned: [...learned, host].slice(-500) });
+    lastBlocked = null; // rebuild the rules with the new domain
+    refresh();
+  });
+});
 
 function ensureAlarm() { chrome.alarms.create('tick', { periodInMinutes: 0.5 }); }
 

@@ -80,6 +80,8 @@ function Get-Reason($now, $s) {
       if ($now -lt (At $now $c)) { return $null }
       if ($now.Hour -lt 6) { if (Get-Curfew $now.AddDays(-1) $s) { return "Curfew $c. Sleep, the morning block is at 10:00" } else { return $null } }
     }
+    # Before 06:00 the night before decides: its curfew runs on until 06:00, a night without one (Sunday into Monday) stays free.
+    if ($now.Hour -lt 6) { if (Get-Curfew $now.AddDays(-1) $s) { return "Curfew $c. Sleep, the morning block is at 10:00" } else { return $null } }
     if ($free -and $free -ne '00:00' -and $now -lt (At $now $free)) { return "Games unlock at $free today" }
     if ((Get-Curfew $now $s) -and -not (Test-LateCurfew $now $s) -and $now -ge (At $now $c)) { return "Curfew $c. Sleep, the morning block is at 10:00" }
   }
@@ -94,9 +96,8 @@ function Get-Curfew($day, $s) {
 }
 
 function Test-LateCurfew($now, $s) {
-  # A curfew earlier than the day's unlock time belongs to the night before (01:30 vs 20:45).
-  $free = $s.games.freeAfter.(Dow $now)
-  return [bool]($s.games.curfew -and $free -and $free -ne '00:00' -and (At $now $s.games.curfew) -lt (At $now $free))
+  # A curfew before 06:00 (e.g. 01:30) belongs to the night before.
+  return [bool]($s.games.curfew -and (At $now $s.games.curfew) -lt (At $now '06:00'))
 }
 
 function Get-UpcomingBlock($now, $s) {
@@ -119,10 +120,10 @@ function Get-ActiveBlock($now, $s) {
 
 function Get-NextChange($now, $s, [bool]$toBlocked) {
   # First moment after $now when games become blocked ($true) or allowed ($false).
-  # The state can only flip at midnight, a block start/end, the free-after time or the curfew.
+  # The state can only flip at midnight, 06:00 (end of a curfew-free night), a block start/end, the free-after time or the curfew.
   $times = foreach ($d in 0..2) {
     $day = $now.Date.AddDays($d)
-    $day
+    $day; $day.AddHours(6)
     foreach ($b in (Get-Blocks $s)) { At $day $b.start; At $day $b.end }
     if ($s.games) { foreach ($t in @($s.games.freeAfter.(Dow $day), $s.games.curfew)) { if ($t) { At $day $t } } }
   }

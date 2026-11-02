@@ -5,9 +5,10 @@ pc-blocker/blocker-log.txt
 pc-blocker/unlock.json
 pc-blocker/schedule-host.json
 
-# Study material and mocks (downloaded PDFs/videos, personal mocks)
+# Downloaded study material (official PDFs/videos). The two original mocks in material/ are tracked.
 study-material/
-chrome-extension/material/
+chrome-extension/material/*
+!chrome-extension/material/mock-*
 
 # Android build output and local signing key
 phone-blocker/out/

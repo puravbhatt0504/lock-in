@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Mock 1</title>
+<style>
+  :root { --bg:#fbfaf6; --card:#fff; --ink:#1c1b1a; --soft:#5b5850; --line:#dcd8cc; --acc:#b4232c; --ok:#1f7a45; --bad:#b4232c; --hl:#fff3c4; --bar1:#8a8578; --bar2:#b4232c; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#17171a; --card:#202024; --ink:#ecebe6; --soft:#a9a8a3; --line:#34343a; --acc:#ff6b6b; --ok:#5fd08a; --bad:#ff7b7b; --hl:#4a3f12; --bar1:#7d7a72; --bar2:#ff6b6b; } }
+  * { box-sizing: border-box; }
+  body { background:var(--bg); color:var(--ink); font:16px/1.6 system-ui, sans-serif; margin:0; }
+  header { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:10px 16px; display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+  header h1 { font-size:17px; margin:0 12px 0 0; }
+  nav button { font:inherit; font-size:14px; border:1px solid var(--line); background:var(--card); color:var(--ink); padding:5px 12px; border-radius:6px; cursor:pointer; }
+  nav button[aria-selected="true"] { border-color:var(--acc); color:var(--acc); font-weight:600; }
+  #clock { margin-left:auto; font:600 18px ui-monospace, monospace; }
+  main { max-width:1200px; margin:0 auto; padding:16px; }
+  section[hidden] { display:none; }
+  h2 { font-size:21px; margin:8px 0; } h3 { font-size:17px; margin:22px 0 6px; }
+  p.muted, .muted { color:var(--soft); font-size:14px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:10px 0 16px; }
+  button.go { font:inherit; font-size:15px; padding:7px 16px; border-radius:6px; border:1px solid var(--acc); background:var(--acc); color:#fff; cursor:pointer; }
+  button.ghost { font:inherit; font-size:15px; padding:7px 16px; border-radius:6px; border:1px solid var(--line); background:var(--card); color:var(--ink); cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  select, input[type=text] { font:inherit; font-size:15px; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:4px; padding:2px 6px; }
+  input[type=text] { width:170px; }
+  .grp { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin:12px 0; }
+  .grp .t { font-weight:700; } .grp .i { color:var(--soft); font-size:14px; margin-bottom:8px; }
+  .box { border:1px dashed var(--line); border-radius:6px; padding:8px 12px; margin:8px 0; font-size:15px; }
+  .q { margin:8px 0; } .q .n { display:inline-block; min-width:28px; font-weight:700; }
+  .q.ok { background:color-mix(in srgb, var(--ok) 12%, transparent); } .q.bad { background:color-mix(in srgb, var(--bad) 12%, transparent); }
+  .q .key { font-size:14px; font-weight:600; margin-left:8px; } .q.ok .key { color:var(--ok); } .q.bad .key { color:var(--bad); }
+  .opts label { display:block; margin-left:28px; cursor:pointer; }
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; }
+  .split > .passage { position:sticky; top:62px; max-height:calc(100vh - 80px); overflow:auto; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:4px 18px; }
+  @media (max-width:860px) { .split { grid-template-columns:1fr; } .split > .passage { position:static; max-height:none; } }
+  .passage p { margin:10px 0; } .passage b.pl { margin-right:6px; }
+  textarea { width:100%; min-height:260px; font:16px/1.6 Georgia, serif; color:var(--ink); background:var(--card); border:1px solid var(--line); border-radius:6px; padding:10px; }
+  .wc { font-size:14px; color:var(--soft); } .wc.low { color:var(--bad); }
+  .score { font-size:20px; font-weight:700; margin:12px 0; }
+  details { margin:10px 0; } summary { cursor:pointer; font-weight:600; }
+  .script p { margin:4px 0; } .script .who { font-weight:700; margin-right:6px; }
+  .card2 { border:2px solid var(--ink); border-radius:8px; padding:12px 18px; max-width:560px; background:var(--card); }
+  #status { font-size:15px; font-weight:600; }
+  table.res { border-collapse:collapse; } table.res td { border-top:1px solid var(--line); padding:6px 16px 6px 0; }
+  svg text { fill:var(--ink); font:13px system-ui, sans-serif; }
+</style>
+</head>
+<body>
+<header>
+  <h1>IELTS Academic · Mock 1</h1>
+  <nav id="tabs">
+    <button data-s="listening" aria-selected="true">Listening</button>
+    <button data-s="reading">Reading</button>
+    <button data-s="writing">Writing</button>
+    <button data-s="speaking">Speaking</button>
+    <button data-s="results">Results</button>
+  </nav>
+  <span id="clock"></span>
+</header>
+<main>
+
+<section id="listening">
+  <h2>Listening · 4 parts · 40 questions · about 30 minutes</h2>
+  <p class="muted">The recordings are read aloud by your computer's built-in voices, so they sound more robotic than the real test. The rules are the same as the real thing: you hear each part <b>once</b>, and you answer while you listen. Use headphones. Your answers save automatically.</p>
+  <div class="bar">
+    <button class="go" id="lPlay">Start the Listening test</button>
+    <label class="muted">from <select id="lFrom"><option value="0">Part 1</option><option value="1">Part 2</option><option value="2">Part 3</option><option value="3">Part 4</option></select></label>
+    <label class="muted">speed <select id="lRate"><option value="0.9">slower</option><option value="1" selected>normal</option><option value="1.1">faster</option></select></label>
+    <button class="ghost" id="lStop" disabled>Stop</button>
+    <span id="status"></span>
+  </div>
+  <div id="lQs"></div>
+  <div class="bar"><button class="go" id="lSubmit">Submit Listening and mark it</button></div>
+  <div id="lScore"></div>
+  <div id="lScript" hidden></div>
+</section>
+
+<section id="reading" hidden>
+  <h2>Reading · 3 passages · 40 questions · 60 minutes</h2>
+  <p class="muted">There's no extra transfer time, so write your answers straight in. Spelling counts. The timer submits automatically at 0:00.</p>
+  <div class="bar"><button class="go" id="rStart">Start the 60-minute timer</button></div>
+  <div id="rBody"></div>
+  <div class="bar"><button class="go" id="rSubmit">Submit Reading and mark it</button></div>
+  <div id="rScore"></div>
+</section>
+
+<section id="writing" hidden>
+  <h2>Writing · 2 tasks · 60 minutes</h2>
+  <p class="muted">Spend about 20 minutes on Task 1 and 40 on Task 2. Task 2 is worth twice as much. Your drafts save automatically.</p>
+  <div class="bar"><button class="go" id="wStart">Start the 60-minute timer</button></div>
+  <div class="grp">
+    <div class="t">Writing Task 1</div>
+    <p>The chart below shows the percentage of commuters in the city of Greenford who used five different ways of travelling to work in 2005 and 2025.</p>
+    <p><b>Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</b> Write at least 150 words.</p>
+    <div id="chart"></div>
+    <textarea id="w1" placeholder="Write your Task 1 answer here…"></textarea>
+    <div class="wc" id="w1c"></div>
+  </div>
+  <div class="grp">
+    <div class="t">Writing Task 2</div>
+    <p>Write about the following topic:</p>
+    <p style="margin-left:20px"><i>In many countries, a growing number of young people are choosing to study at universities abroad.</i><br><b>Do the advantages of this trend outweigh the disadvantages?</b></p>
+    <p>Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words.</p>
+    <textarea id="w2" placeholder="Write your Task 2 answer here…" style="min-height:380px"></textarea>
+    <div class="wc" id="w2c"></div>
+  </div>
+  <div class="bar">
+    <button class="go" id="wDone">Finish and show model answers</button>
+    <button class="ghost" id="wCopy">Copy my answers for Claude to mark</button>
+    <span class="muted" id="wCopied"></span>
+  </div>
+  <div id="wAfter" hidden>
+    <h3>Check yourself against the band descriptors</h3>
+    <ul class="muted">
+      <li><b>Task 1:</b> Is there a clear overview, a sentence saying what changed most overall, with no numbers in it? Did you group the data (rose vs fell) instead of describing all five one by one? Are the figures accurate, and did you use "percentage points" for differences between percentages?</li>
+      <li><b>Task 2:</b> Do you answer the question that was asked ("do the advantages outweigh…") and say so clearly in both the introduction and the conclusion? Does each body paragraph have one main idea, developed with an explanation or example?</li>
+      <li><b>Both:</b> varied linking (not "Firstly… Secondly… Moreover" in every paragraph), accurate complex sentences, and no memorised phrases.</li>
+    </ul>
+    <p class="muted">Full official criteria: <a href="https://ielts.org/cdn/ielts-guides/ielts-writing-band-descriptors.pdf">Writing band descriptors (PDF)</a>.</p>
+    <details><summary>Model answer · Task 1 (about 180 words)</summary><div id="m1"></div></details>
+    <details><summary>Model answer · Task 2 (about 300 words)</summary><div id="m2"></div></details>
+  </div>
+</section>
+
+<section id="speaking" hidden>
+  <h2>Speaking · 3 parts · 11–14 minutes</h2>
+  <p class="muted">Record yourself on your phone, then play it back and mark it with the <a href="https://ielts.org/cdn/ielts-guides/ielts-speaking-band-descriptors.pdf">speaking band descriptors</a>. Listen for fillers, long pauses and repeated words. Better still, ask someone to read the examiner's questions to you.</p>
+  <h3>Part 1 · Introduction and interview (4–5 minutes)</h3>
+  <div id="s1"></div>
+  <h3>Part 2 · Long turn (3–4 minutes)</h3>
+  <div class="card2">
+    <p><b>Describe a skill you learned that took you a long time to master.</b></p>
+    <p>You should say:</p>
+    <ul><li>what the skill was</li><li>when and why you started learning it</li><li>what made it difficult</li></ul>
+    <p>and explain how you felt when you finally mastered it.</p>
+  </div>
+  <div class="bar"><button class="go" id="sPrep">Start: 1 minute to prepare, then 2 minutes to talk</button><span id="sStatus"></span></div>
+  <p class="muted">Examiner's follow-up: <i>Do you still use this skill today?</i></p>
+  <h3>Part 3 · Discussion (4–5 minutes)</h3>
+  <div id="s3"></div>
+</section>
+
+<section id="results" hidden>
+  <h2>Results</h2>
+  <div id="resTable"></div>
+  <p class="muted">The band tables are the usual published IELTS Academic conversions. The real cut-offs shift slightly from test to test, and this mock wasn't calibrated against real candidates, so take the bands as a rough guide. For Writing and Speaking, estimate your own band from the descriptors, or paste your Writing to Claude for marking.</p>
+  <p class="muted">To log this mock on your new-tab tracker, enter all four bands under "Mock score log".</p>
+  <div class="bar"><button class="ghost" id="reset">Clear all my answers and start again</button></div>
+</section>
+</main>
+
+<script src="mock-1.js"></script>
+</body>
+</html>

@@ -25,7 +25,7 @@
   const DM = 'https://www.d-mat.de/wp-content/uploads/2026/09/';
   const DM_PDF = DM + '260902_dMAT_General-Academic-Module_Preparatoy-Materials_EN.pdf#page=';
   const TA_PDF = 'https://testas.de/fileadmin/bilder/4_pdf-video/1-teilnehmende/230531_digitalertestas_preparatory_materials.pdf#page=';
-  // Study files ship inside the extension (chrome-extension/material/, git-ignored), so links open without file:// access.
+  // The two original mocks ship inside the extension (chrome-extension/material/), so links open without file:// access.
   const MOCKS = 'material/';
   const LINKS = {
     intro: ['Video: how the dMAT works', DM + '260908_General-Introduction_dMAT.mp4'],
@@ -48,8 +48,8 @@
     mock: ['Unofficial free mocks (MS in Germany, needs account)', 'https://msingermany.com/dmat'],
     m1: ['IELTS Mock 1', MOCKS + 'mock-1.html'],
     m2: ['IELTS Mock 2', MOCKS + 'mock-2.html'],
-    wbd: ['Writing band descriptors (PDF)', MOCKS + 'IELTS_writing_band_descriptors.pdf'],
-    sbd: ['Speaking band descriptors (PDF)', MOCKS + 'IELTS_speaking_band_descriptors.pdf'],
+    wbd: ['Writing band descriptors (PDF)', 'https://ielts.org/cdn/ielts-guides/ielts-writing-band-descriptors.pdf'],
+    sbd: ['Speaking band descriptors (PDF)', 'https://ielts.org/cdn/ielts-guides/ielts-speaking-band-descriptors.pdf'],
     score: ['Raw score to band (ielts.org)', 'https://ielts.org/organisations/ielts-for-organisations/understanding-ielts-scoring'],
     reg: ['Register (g.a.s.t.)', 'https://www.gast.de/portal/center-search/center-search/dmat/exams/worldwide?lang=en'],
   };

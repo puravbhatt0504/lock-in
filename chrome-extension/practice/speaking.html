@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>IELTS Speaking practice</title>
 <link rel="stylesheet" href="practice.css">
-<style>.ql li { margin:6px 0; } .ql li.now { font-weight:700; } .ql li.done { color:var(--soft); }</style>
+<style>
+  .ql li { margin:10px 0; } .ql li.now { font-weight:700; } .ql li.done { color:var(--soft); }
+  textarea.ans { display:block; min-height:56px; field-sizing:content; margin-top:4px; font:15px/1.5 system-ui, sans-serif; color:var(--ink); font-weight:400; }
+  #rec.on { background:var(--ink); border-color:var(--ink); }
+  #heard { font-size:14px; color:var(--soft); font-style:italic; }
+  .recbar { position:sticky; top:52px; z-index:4; background:var(--bg); padding:6px 0; border-bottom:1px solid var(--line); }
+</style>
 </head>
 <body>
 <header>
@@ -14,7 +20,12 @@
   <span id="clock"></span>
 </header>
 <main style="max-width:900px">
-  <p class="muted">3 parts · 11–14 minutes. Start a voice recorder on your phone first. Press <b>Ask the next question</b> and the browser's voice asks it like an examiner; answer out loud before you press again. Then play the recording back and mark it with the <a href="../material/IELTS_speaking_band_descriptors.pdf">speaking band descriptors</a>, listening for fillers, long pauses, repeated words and tense mistakes.</p>
+  <p class="muted">3 parts · 11–14 minutes. Press <b>Start recording</b>, then <b>Ask the next question</b>: the examiner’s voice asks it and you answer out loud before pressing again. What you say is written in the box under each question and each answer is timed. At the end, <b>Rate my speaking</b> estimates your bands. Use headphones so the examiner’s voice isn’t picked up. If nothing appears in the boxes, click in a box and press <b>Win+H</b> to dictate instead, or type.</p>
+  <div class="bar recbar">
+    <button class="go" id="rec">Start recording</button>
+    <span class="muted" id="recstat"></span>
+    <span id="heard"></span>
+  </div>
   <h3>Part 1 · Introduction and interview (4–5 minutes)</h3>
   <p class="muted">Answer in 2–3 sentences: the answer, a reason, an example.</p>
   <ol class="ql" id="p1"></ol>
@@ -22,12 +33,26 @@
   <h3>Part 2 · Long turn (3–4 minutes)</h3>
   <div class="card2" id="card"></div>
   <div class="bar"><button class="go" id="prep">Start: 1 minute to prepare, then 2 minutes to talk</button><span id="status"></span></div>
+  <div id="p2box"></div>
   <p class="muted" id="follow"></p>
   <h3>Part 3 · Discussion (4–5 minutes)</h3>
   <p class="muted">Longer answers: give your view, explain it, compare or give an example, and consider another side.</p>
   <ol class="ql" id="p3"></ol>
   <div class="bar"><button class="go" id="ask3">Ask the next question</button></div>
+  <h3>Your recording and review</h3>
+  <audio id="audio" controls hidden></audio> <a id="dl" hidden>Download the recording</a>
+  <div class="bar">
+    <button class="go" id="rate">Rate my speaking</button>
+    <button class="ghost" id="copy">Copy for Claude to mark</button>
+    <button class="ghost" id="save">Save to a file</button>
+    <button class="ghost" id="reset">Start this set again</button>
+    <span class="muted" id="msg"></span>
+  </div>
+  <div id="review"></div>
+  <p class="muted">Official criteria: <a href="../material/IELTS_speaking_band_descriptors.pdf">Speaking band descriptors (PDF)</a>. Listen to your recording for pronunciation: word stress, sentence stress and sounds that change the meaning.</p>
 </main>
+<script src="speak-sets.js"></script>
+<script src="speak-review.js"></script>
 <script src="speaking.js"></script>
 </body>
 </html>

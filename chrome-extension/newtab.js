@@ -49,7 +49,7 @@ function render() {
     const d = store.done[today] || {};
     tasks.append(taskRow('main', 'Main task', plan.main, !!d.main, plan.v || [], plan.l || []));
     (plan.steps || []).forEach((st, i) => tasks.append(taskRow('s' + i, st.at, st.t, !!d['s' + i], st.v || [], st.l || [])));
-    if (!plan.noLock && plan.am !== false) tasks.append(taskRow('am', 'Morning · 10:00', F.MORNING, !!d.am, []));
+    if (!plan.noLock && plan.am !== false) tasks.append(taskRow('am', 'Morning · 10:00', F.MORNING, !!d.am, [], [F.morningLink(today)].filter(Boolean)));
   } else {
     $('weektitle').textContent = 'No plan task today';
     tasks.append(el('p', { className: 'empty' }, today < PLAN_DAYS[0] ? 'Your six-week plan starts soon. Book the test first.' : 'Plan complete. Well done.'));

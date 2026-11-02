@@ -54,15 +54,17 @@
     reg: ['Register (g.a.s.t.)', 'https://www.gast.de/portal/center-search/center-search/dmat/exams/worldwide?lang=en'],
   };
 
-  // Original practice tests in practice/: Reading and Listening Tests 1–8, Writing Task 1 sets 1–7 and Task 2 sets 1–11, Speaking sets 1–4.
+  // Original practice tests in practice/: Reading and Listening Tests 1–8, Writing Task 1 sets 1–7 and Task 2 sets 1–11, Speaking sets 1–36.
   for (let n = 1; n <= 8; n++) LINKS['r' + n] = [`Reading Test ${n} (practice)`, `practice/reading.html?n=${n}`];
   for (let n = 1; n <= 7; n++) LINKS['wa' + n] = [`Writing Task 1 · set ${n}`, `practice/writing.html?task=1&n=${n}`];
   for (let n = 1; n <= 11; n++) LINKS['wb' + n] = [`Writing Task 2 · set ${n}`, `practice/writing.html?task=2&n=${n}`];
 
   for (let n = 1; n <= 8; n++) LINKS['l' + n] = [`Listening Test ${n} (practice)`, `practice/listening.html?n=${n}`];
-  for (let n = 1; n <= 4; n++) LINKS['sp' + n] = [`Speaking set ${n} (practice)`, `practice/speaking.html?n=${n}`];
+  for (let n = 1; n <= 36; n++) LINKS['sp' + n] = [`Speaking set ${n} (practice)`, `practice/speaking.html?n=${n}`];
 
-  const MORNING = 'Speaking Part 2 long turn (1 min prep, 2 min talk), record and replay + 10 min mistakes log';
+  const MORNING = 'Speaking test, Parts 1–3: record it, press Rate my speaking, then 10 min on the mistakes it found';
+  // Each morning has its own Speaking set: 2 Nov = set 5 … 3 Dec = set 36 (sets 1–4 are the evening mocks).
+  const morningLink = (date) => { const n = 5 + Math.round((new Date(date + 'T12:00') - new Date('2026-11-02T12:00')) / 864e5); return n >= 5 && n <= 36 ? 'sp' + n : null; };
 
   // date -> { main, v: [playlist #s], l: [LINKS keys], week, noLock, steps: [{ at, t, v, l }] }
   // steps: multi-part days split into one tickable row per part; ticking them all ticks main.
@@ -461,7 +463,7 @@
     return n;
   }
 
-  root.FOCUS = { VIDEOS, LINKS, MORNING, PLAN, WEEK_TITLES, DOW, ymd, hm, at, addDays, activeBlock, nextBlock, effectiveBlocks,
+  root.FOCUS = { VIDEOS, LINKS, MORNING, morningLink, PLAN, WEEK_TITLES, DOW, ymd, hm, at, addDays, activeBlock, nextBlock, effectiveBlocks,
     computeState, dnrRules, isAllowedYouTube, isYouTube, isAnime, isStream, isEmbed, isSafeHost, streamScore, STREAM_MIN, ieltsOverall, streak,
     videoUrl: (n) => `https://www.youtube.com/watch?v=${VIDEOS[n][0]}` };
 })(typeof self !== 'undefined' ? self : globalThis);

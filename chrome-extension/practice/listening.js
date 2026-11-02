@@ -74,7 +74,8 @@ let playing = false;
 const FEMALE = /female|zira|hazel|susan|libby|sonia|maisie|mia|emma|aria|jenny|natasha|clara|catherine|karen|moira|tessa|samantha|serena|kate|fiona|heera|neerja|linda|eva/i;
 function pickVoices() {
   const en = synth.getVoices().filter((v) => /^en/i.test(v.lang));
-  const pref = (list) => list.find((v) => /en-GB/i.test(v.lang)) || list[0];
+  const nat = (list) => list.filter((v) => /natural/i.test(v.name) && !/maisie/i.test(v.name));
+  const pref = (list) => nat(list).find((v) => /en-GB/i.test(v.lang)) || nat(list)[0] || list.find((v) => /en-GB/i.test(v.lang)) || list[0];
   const fem = en.filter((v) => FEMALE.test(v.name)), mal = en.filter((v) => !FEMALE.test(v.name));
   const W = pref(fem) || pref(en), M = pref(mal) || pref(en);
   return { W, M, N: en.find((v) => v !== W && v !== M) || M || W };
@@ -90,10 +91,14 @@ function castFor(p, base) {
   const i = N * 4 + p, W = one(MIX[i % MIX.length], 0), M = one(MIX[(i + 3) % MIX.length], 1), Nr = natural('Libby');
   return { W: W ? W.v : base.W, M: M ? M.v : base.M, N: Nr || base.N, labels: { W: W && W.label, M: M && M.label } };
 }
+// Edge lists its robotic desktop voices at once and the natural ones a moment later: wait for those (other browsers: any voices).
 const voicesReady = new Promise((res) => {
-  if (!synth || synth.getVoices().length) return res();
-  synth.onvoiceschanged = () => res();
-  setTimeout(res, 2000);
+  if (!synth) return res();
+  const edge = /Edg\//.test(navigator.userAgent), t0 = Date.now();
+  const t = setInterval(() => {
+    const v = synth.getVoices();
+    if ((edge ? v.some((x) => /natural/i.test(x.name)) : v.length) || Date.now() - t0 > 5000) { clearInterval(t); res(); }
+  }, 100);
 });
 const sayOne = (text, voice, rate) => new Promise((res) => {
   const u = new SpeechSynthesisUtterance(text);
@@ -117,10 +122,10 @@ const wait = (secs, msg) => new Promise((res) => {
 async function playFrom(start) {
   if (!synth) { $('status').textContent = 'This browser has no built-in speech voices. Use Edge or Chrome.'; return; }
   await voicesReady;
-  const base = pickVoices(), rate = +$('rate').value;
+  const rate = +$('rate').value;
   playing = true; $('play').disabled = true; $('stop').disabled = false;
   for (let p = start; p < T.length && playing; p++) {
-    const V = castFor(p, base), who2 = [...new Set(T[p].script.map((l) => l[0]))].filter((w) => V.labels[w]);
+    const V = castFor(p, pickVoices()), who2 = [...new Set(T[p].script.map((l) => l[0]))].filter((w) => V.labels[w]);
     const playingMsg = `Part ${p + 1} · playing${who2.length ? ' · ' + who2.map((w) => V.labels[w]).join(', ') : ' · open in Microsoft Edge for natural voices'}`;
     for (const [who, a, b] of T[p].script) {
       if (!playing) break;

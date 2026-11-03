@@ -43,7 +43,8 @@ function Test-Schedule($s) {
       if (-not (Test-Time $s.games.freeAfter.$d)) { return "Games unlock time for $d must be 24-hour, like 20:45 (00:00 = only during blocks)." }
     }
     if ($s.games.curfew -and -not (Test-Time $s.games.curfew)) { return 'The curfew must be 24-hour, like 23:30, or empty for none.' }
-    if (@($s.games.curfewDays | Where-Object { $DayNames -notcontains $_ }).Count) { return 'Curfew days must be Mon..Sun.' }
+    # The editors don't send curfewDays; piping $null would yield one $null item and refuse every save
+    if ($null -ne $s.games.curfewDays -and @($s.games.curfewDays | Where-Object { $DayNames -notcontains $_ }).Count) { return 'Curfew days must be Mon..Sun.' }
   }
   if ($s.calendar -and $s.calendar.url) {
     if ("$($s.calendar.url)" -notmatch '^https://\S+$' -or "$($s.calendar.url)".Length -gt 2000) { return 'The calendar link must be the https:// "Secret address in iCal format" from Google Calendar.' }

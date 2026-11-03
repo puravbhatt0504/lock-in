@@ -110,7 +110,7 @@ $('save').onclick = async () => {
   try {
     res = await chrome.runtime.sendNativeMessage(HOST, { schedule: read() });
   } catch (e) {
-    msg('Can’t reach the desktop helper. Run pc-blocker\\install.bat once, then try again.', 'err');
+    msg(`Can’t reach the desktop helper (${e.message}). Run pc-blocker\\install.bat once, then try again.`, 'err');
     return;
   }
   if (!res || !res.ok) { msg((res && res.error) || 'Could not save.', 'err'); return; }

@@ -6,11 +6,14 @@ What it does
     Zomato, Swiggy (food), EatSure, EatClub, Toing, Faasos, Behrouz, Box8, Domino's, Pizza Hut,
     McDonald's, KFC, Burger King, Starbucks, Taco Bell, Magicpin, Bistro, Snacc, Zepto Cafe.
     (Matched by app name, so new installs get caught the first time you open them.)
+    Plus any app whose name has a food word in it: pizza, burger, biryani, food, momo, bakery, ...
+    (Admin.FOOD), so brands not on the list (Mojo Pizza, La Pino'z) are blocked too.
   - Blinkit, Zepto, Swiggy Instamart, BigBasket, JioMart, DMart, Amazon, Flipkart stay usable for
     groceries. If a junk item (chips, chocolate, cold drinks, ice cream, biscuits, Maggi, ...) is in
     your cart, a red bar covers the Pay button. Remove the junk, leave the cart, open it again.
     Note: swiggy.com stays blocked. Use the separate "Swiggy Instamart" app for groceries.
-  - Every browser except Chrome is blocked. In Chrome the food and quick-commerce websites are blocked.
+  - Every browser except Chrome is blocked. In Chrome the food and quick-commerce websites are blocked,
+    and any site whose address has a food word (mojopizza.in) is sent back and added to the blocklist.
   - If you turn off its Accessibility switch, all the grocery apps and ALL app installs get blocked
     until you turn it back on.
   - After LOCK: USB debugging, date/time changes, factory reset from Settings, safe mode and new users
@@ -63,6 +66,8 @@ Known gaps (to know, not to use)
   - The junk check reads what's on screen. A very long cart with the junk below the fold, never scrolled
     into view, won't trigger the bar.
   - In-app browsers (links opened inside Instagram etc.) aren't covered by the Chrome blocklist.
+  - A food brand with no food word in its name or address (like "Subway", which would also catch
+    Subway Surfers) still needs adding to FULL_NAMES / SITES by hand.
   - Another phone or a laptop. pc-blocker\ does games, not food sites.
 
 

@@ -13,8 +13,10 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -40,6 +42,7 @@ public class Guard extends AccessibilityService {
     static final Pattern QTY = Pattern.compile("^\\d{1,2}$"); // the number in a - 1 + stepper
 
     private final Map<String, Integer> kinds = new HashMap<>();
+    private final Set<String> caught = new HashSet<>();
     private boolean cartJunk; // sticky until you leave the cart, so scrolling the junk off-screen doesn't help
     private TextView wall;
     private final Rect wallAt = new Rect();
@@ -69,6 +72,7 @@ public class Guard extends AccessibilityService {
         if (root == null || root.getPackageName() == null) return;
         String pkg = root.getPackageName().toString();
         if (pkg.equals(getPackageName())) return;
+        if (pkg.equals(Admin.CHROME)) foodSite(root);
 
         int kind = kinds.computeIfAbsent(pkg, p -> Admin.kind(this, p));
         if (kind == Admin.FULL) {
@@ -85,6 +89,23 @@ public class Guard extends AccessibilityService {
 
     @Override
     public void onInterrupt() {}
+
+    /** Chrome on a food site that isn't listed (mojopizza.in): add it to Chrome's blocklist and go back. */
+    private void foodSite(AccessibilityNodeInfo root) {
+        List<AccessibilityNodeInfo> bar = root.findAccessibilityNodeInfosByViewId(Admin.CHROME + ":id/url_bar");
+        if (bar.isEmpty() || bar.get(0).isFocused()) return; // focused = typing a search, not on a site yet
+        String host = host(text(bar.get(0)));
+        if (host == null || !Admin.FOOD.matcher(host).find()) return;
+        Log.i(Admin.TAG, "food site: " + host);
+        if (caught.add(host)) Admin.blockSites(this, host);
+        performGlobalAction(GLOBAL_ACTION_BACK);
+    }
+
+    /** "https://www.mojopizza.in/menu" or "mojopizza.in" -> host; placeholder text like "Search or type URL" -> null. */
+    static String host(String bar) {
+        String h = bar.toLowerCase().replaceFirst("^[a-z]+://", "").replaceFirst("[/:?#].*", "");
+        return h.contains(".") && !h.contains(" ") ? h : null;
+    }
 
     /** A junk name whose card has a quantity stepper (in cart), not an ADD button (a suggestion). */
     static boolean junkInCart(AccessibilityNodeInfo root) {

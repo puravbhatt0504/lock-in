@@ -11,9 +11,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.UserManager;
 import android.util.Log;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 /** Device owner. Holds every policy; Guard and Lock just call in here. */
 public class Admin extends DeviceAdminReceiver {
@@ -27,7 +31,14 @@ public class Admin extends DeviceAdminReceiver {
         "zomato", "swiggy", "eatsure", "eatclub", "toing", "faasos", "behrouz", "ovenstory", "box8",
         "domino's", "domino’s", "pizza hut", "mcdonald", "mcdelivery", "kfc", "burger king", "starbucks",
         "taco bell", "magicpin", "bistro", "snacc", "zepto cafe", "zepto café",
+        "wendy", "dunkin", "baskin", "haldiram", "chaayos", "theobroma", "krispy kreme", "bikanervala",
+        "barbeque nation", "papa john", "lunchbox", "sweet truth", "eatfit",
     };
+    // Every brand not named above (Mojo Pizza, La Pino'z, ...): checked against app names and Chrome's address bar.
+    // Substrings on purpose, since site names run words together: "pizz" catches mojopizza.in.
+    static final Pattern FOOD = Pattern.compile("pizz|burger|biryani|food|momo|kitchen|baker|cakes|pastr|donut"
+            + "|doughnut|dessert|ice ?cream|waffle|sweets|mithai|kebab|kabab|shawarma|tiffin|dhaba|restaurant"
+            + "|eatery|dineout|meals|chaat|rasoi|bhojan", Pattern.CASE_INSENSITIVE);
     // Groceries allowed, junk in the cart is not (see Guard).
     static final String[] PARTIAL_NAMES = {
         "instamart", "blinkit", "zepto", "bigbasket", "jiomart", "dmart", "amazon", "flipkart",
@@ -39,6 +50,7 @@ public class Admin extends DeviceAdminReceiver {
         "ovenstory.in", "box8.in", "dominos.co.in", "pizzahut.co.in", "mcdelivery.co.in",
         "mcdonaldsindia.com", "kfc.co.in", "burgerking.in", "starbucks.in", "magicpin.in",
         "blinkit.com", "zeptonow.com", "zepto.com", "bigbasket.com",
+        "haldirams.com", "theobroma.in", "chaayos.com", "barbequenation.com",
     };
 
     // Applied by Lock. Recovery-mode wipe is the one thing no app can stop.
@@ -65,6 +77,7 @@ public class Admin extends DeviceAdminReceiver {
         if (label.contains("instamart")) return PARTIAL; // "Swiggy Instamart" is groceries, not Swiggy food
         for (String s : FULL_NAMES) if (label.contains(s)) return FULL;
         for (String s : PARTIAL_NAMES) if (label.contains(s)) return PARTIAL;
+        if (FOOD.matcher(label).find()) return FULL;
         // Any browser except Chrome: Chrome gets the site blocklist, others would dodge it.
         Intent web = new Intent(Intent.ACTION_VIEW, Uri.parse("http://example.com"))
                 .addCategory(Intent.CATEGORY_BROWSABLE).setPackage(pkg);
@@ -88,10 +101,19 @@ public class Admin extends DeviceAdminReceiver {
         if (guardOn) dpm(c).clearUserRestriction(admin(c), UserManager.DISALLOW_INSTALL_APPS);
         else dpm(c).addUserRestriction(admin(c), UserManager.DISALLOW_INSTALL_APPS);
 
-        Bundle chrome = new Bundle();
-        chrome.putStringArray("URLBlocklist", SITES);
-        dpm(c).setApplicationRestrictions(admin(c), CHROME, chrome);
+        blockSites(c);
         Log.i(TAG, "sweep done, guardOn=" + guardOn);
+    }
+
+    /** Chrome's blocklist: SITES plus every food site Guard caught since. The policy itself remembers them. */
+    static void blockSites(Context c, String... caught) {
+        Set<String> all = new TreeSet<>(Arrays.asList(SITES));
+        String[] had = dpm(c).getApplicationRestrictions(admin(c), CHROME).getStringArray("URLBlocklist");
+        if (had != null) all.addAll(Arrays.asList(had));
+        all.addAll(Arrays.asList(caught));
+        Bundle chrome = new Bundle();
+        chrome.putStringArray("URLBlocklist", all.toArray(new String[0]));
+        dpm(c).setApplicationRestrictions(admin(c), CHROME, chrome);
     }
 
     /** May 2027: undo everything and stop being device owner, so the app can be uninstalled. */

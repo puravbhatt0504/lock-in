@@ -101,10 +101,14 @@ const voicesReady = new Promise((res) => {
   }, 100);
 });
 const sayOne = (text, voice, rate) => new Promise((res) => {
-  const u = new SpeechSynthesisUtterance(text);
+  // Kept in window: Chromium can drop an unreferenced utterance and never fire onend.
+  const u = window.__utter = new SpeechSynthesisUtterance(text);
   if (voice) { u.voice = voice; u.lang = voice.lang; }
-  u.rate = rate; u.onend = u.onerror = () => res();
+  let quiet = 0, done = false, w = 0;
+  const end = () => { if (done) return; done = true; clearInterval(w); res(); };
+  u.rate = rate; u.onend = u.onerror = end;
   synth.speak(u);
+  w = setInterval(() => { quiet = synth.speaking || synth.pending ? 0 : quiet + 1; if (quiet >= 4) end(); }, 250);   // backup if onend never fires
 });
 async function say(text, voice, rate) {
   // Chrome's Google voices cut off long utterances, so those go sentence by sentence; Edge's natural voices read whole lines.

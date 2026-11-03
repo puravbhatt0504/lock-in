@@ -393,10 +393,14 @@ const voicesReady = new Promise((res) => {
 });
 function sayOne(text, voice, rate) {
   return new Promise((res) => {
-    const u = new SpeechSynthesisUtterance(text);
+    // Kept in window: Chromium can drop an unreferenced utterance and never fire onend.
+    const u = window.__utter = new SpeechSynthesisUtterance(text);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
-    u.rate = rate; u.onend = u.onerror = () => res();
+    let quiet = 0, done = false, w = 0;
+    const end = () => { if (done) return; done = true; clearInterval(w); res(); };
+    u.rate = rate; u.onend = u.onerror = end;
     synth.speak(u);
+    w = setInterval(() => { quiet = synth.speaking || synth.pending ? 0 : quiet + 1; if (quiet >= 4) end(); }, 250);   // backup if onend never fires
   });
 }
 async function say(text, voice, rate) {

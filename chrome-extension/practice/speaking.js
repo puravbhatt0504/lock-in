@@ -20,7 +20,7 @@ $('card').innerHTML = `<p><b>${task}</b></p><p>You should say:</p><ul>${rest.sli
 
 // The examiner's voice: one natural British voice per set in Edge, else any English voice.
 const synth = window.speechSynthesis;
-let talking = false, quietUntil = 0;
+let talking = false, quietUntil = 0, utter = null;   // utter: keeps the utterance alive, or Chromium may drop it and never fire onend
 // Edge lists its robotic desktop voices at once and the natural ones a moment later: wait for those (other browsers: any voices).
 const voicesReady = new Promise((res) => {
   if (!synth) return res();
@@ -38,10 +38,14 @@ const say = (text) => new Promise(async (res) => {
   const en = synth.getVoices().filter((v) => /^en/i.test(v.lang)), name = ['Ryan', 'Sonia', 'Thomas', 'Libby'][(N - 1) % 4];
   const nat = en.filter((x) => /natural/i.test(x.name) && !/maisie/i.test(x.name));
   const v = nat.find((x) => x.name.includes(` ${name} `)) || nat.find((x) => /en-GB/i.test(x.lang)) || nat[0] || en.find((x) => /en-GB/i.test(x.lang)) || en[0];
-  const u = new SpeechSynthesisUtterance(text);
+  const u = utter = new SpeechSynthesisUtterance(text);
   if (v) { u.voice = v; u.lang = v.lang; }
-  u.rate = 0.95; u.onend = u.onerror = () => { talking = false; quietUntil = Date.now() + 700; res(); };
+  let quiet = 0, w = 0, done = false;
+  const end = () => { if (done) return; done = true; clearInterval(w); if (utter === u) { talking = false; quietUntil = Date.now() + 700; } res(); };
+  u.rate = 0.95; u.onend = u.onerror = end;
   synth.speak(u);
+  // Backup for when onend never fires: carry on once the voice has been silent for a second.
+  w = setInterval(() => { quiet = synth.speaking || synth.pending ? 0 : quiet + 1; if (quiet >= 4) end(); }, 250);
 });
 
 /* ---------- answers: one box per question, filled by speech-to-text, Win+H dictation or typing ---------- */
@@ -50,7 +54,8 @@ let cur = null;                                        // the answer being spoke
 const slot = (c) => (c.part === 'p2' ? S.p2 : S[c.part][c.i]);
 const boxFor = (c) => document.querySelector(`textarea[data-part="${c.part}"][data-i="${c.part === 'p2' ? 0 : c.i}"]`);
 function tally() { if (cur && cur.t0) { const a = slot(cur); a.secs = (a.secs || 0) + (Date.now() - cur.t0) / 1000; cur.t0 = 0; save(); } }
-function closeAnswer() { tally(); cur = null; }
+let last = null, lastUntil = 0;                         // the answer just closed: words still being recognised belong to it
+function closeAnswer() { tally(); if (cur) { last = cur; lastUntil = Date.now() + 1200; } cur = null; }
 function openAnswer(part, i) { closeAnswer(); cur = { part, i, t0: recording ? Date.now() : 0 }; }
 function box(part, i) {
   const a = part === 'p2' ? S.p2 : S[part][i];
@@ -72,13 +77,16 @@ function asker(part, list, btn) {
   S[part].forEach((_, i) => addQ(part, i, false));
   if (S[part].length >= list.length) finish();
   $(btn).onclick = async () => {
+    if (!recording) startRec(); else reviveSR();
     const i = S[part].length;
     [...$(part).children].forEach((li) => { li.className = 'done'; });
     closeAnswer();
     if (i >= list.length) return finish();
     S[part].push({ q: list[i], text: '', secs: 0 }); save();
     addQ(part, i, true);
+    $(btn).disabled = true;                              // a second click would cut the examiner off and skip a question
     await say(list[i]);
+    $(btn).disabled = false;
     openAnswer(part, i);
   };
 }
@@ -100,6 +108,7 @@ function countdown(secs, label) {
   });
 }
 $('prep').onclick = async () => {
+  if (!recording) startRec(); else reviveSR();
   closeAnswer();
   $('prep').disabled = true;
   await say('Here is your topic. You have one minute to prepare. You can make some notes.');
@@ -119,7 +128,16 @@ $('prep').onclick = async () => {
 
 /* ---------- recording: audio to play back + speech-to-text into the answer boxes ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, mr = null, retries = 0;
+let rec = null, mr = null, retries = 0, srLive = false;
+// Edge ends speech-to-text after pauses and won't always restart it without a click, so every click
+// (next question, Part 2 start, or anywhere on the page) brings it back if it has stopped.
+function reviveSR() {
+  if (!recording || !SR || (rec && srLive)) return;
+  if (rec) { const r = rec; rec = null; try { r.abort(); } catch (x) {} }
+  retries = 0; startSR();
+  $('recstat').textContent = 'Recording. Answers appear under each question.';
+}
+document.addEventListener('pointerdown', reviveSR);
 async function startRec() {
   recording = true; retries = 0;
   if (SR) startSR();                                   // Edge only allows speech-to-text to start straight from the click
@@ -150,27 +168,39 @@ function startSR() {
     for (let k = e.resultIndex; k < e.results.length; k++) {
       const r = e.results[k], t = r[0].transcript.trim();
       if (!r.isFinal) { interim += t + ' '; continue; }
-      if (!t || !cur || talking || Date.now() < quietUntil) continue;   // skip the examiner's voice and talk between questions
-      const a = slot(cur);
+      // Into the open answer, or the one just closed if these are its last words; never the examiner's voice.
+      const to = cur && !talking && Date.now() >= quietUntil ? cur : Date.now() < lastUntil ? last : null;
+      if (!t || !to) continue;
+      const a = slot(to);
       a.text = (a.text ? a.text + ' ' : '') + t; save();
-      const b = boxFor(cur); if (b) b.value = a.text;
+      const b = boxFor(to); if (b) b.value = a.text;
     }
     $('heard').textContent = interim && cur ? 'Hearing: ' + interim : '';
   };
+  const me = rec;
+  rec.onstart = () => { if (rec === me) srLive = true; };
   rec.onerror = (e) => {
-    if (e.error === 'no-speech' || e.error === 'aborted') return;
-    rec = null;
+    if (rec !== me || e.error === 'no-speech' || e.error === 'aborted') return;
+    rec = null; srLive = false;
     // Starting together with the microphone permission prompt can fail once: try again when the permission has settled.
     if (e.error === 'not-allowed' && recording && retries++ < 2) return setTimeout(() => { if (recording && !rec) { startSR(); $('recstat').textContent = 'Recording. Answers appear under each question.'; } }, 800);
-    $('recstat').textContent = `Speech-to-text isn’t working right now (${e.error}). Audio is still recording. Press Stop and Start recording again, or click in an answer box and press Win+H to dictate.`;
+    paused(e.error);
   };
-  rec.onend = () => { if (recording && rec) try { rec.start(); } catch (x) {} };   // it stops by itself after silence
-  rec.start();
+  rec.onend = () => {                                   // it stops by itself after silence: start it again
+    if (rec !== me) return;
+    srLive = false;
+    if (!recording) return;
+    try { me.start(); } catch (x) { rec = null; paused('stopped'); }
+  };
+  try { rec.start(); } catch (x) { rec = null; paused('could not start'); }
+}
+function paused(why) {
+  if (recording) $('recstat').textContent = `Speech-to-text paused (${why}). Audio is still recording. Click anywhere on the page, or ask the next question, and it starts again.`;
 }
 function stopRec() {
   recording = false;
   tally();
-  const r = rec; rec = null; if (r) r.stop();
+  const r = rec; rec = null; srLive = false; if (r) r.stop();
   if (mr && mr.state !== 'inactive') mr.stop();
   $('rec').textContent = 'Start recording'; $('rec').classList.remove('on');
   $('heard').textContent = '';

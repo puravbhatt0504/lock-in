@@ -329,7 +329,7 @@ document.addEventListener('input', (e) => { const q = e.target.dataset && e.targ
 document.addEventListener('change', (e) => { const q = e.target.dataset && e.target.dataset.q; if (q) { S.a[q] = e.target.value; save(); } });
 
 /* ---------- marking ---------- */
-const norm = (s) => String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/^£/, '').replace(/\s+/g, ' ').trim().replace(/[.,]$/, '');
+const norm = (s) => String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[-–—]/g, ' ').replace(/^£/, '').replace(/\s+/g, ' ').trim().replace(/[.,]$/, '');
 const BANDS = {
   L: [[39, 9], [37, 8.5], [35, 8], [32, 7.5], [30, 7], [26, 6.5], [23, 6], [18, 5.5], [16, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [0, 0]],
   R: [[39, 9], [37, 8.5], [35, 8], [33, 7.5], [30, 7], [27, 6.5], [23, 6], [19, 5.5], [15, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [0, 0]],
@@ -379,17 +379,21 @@ let playing = false;
 const FEMALE = /female|zira|hazel|susan|libby|sonia|maisie|mia|emma|aria|jenny|natasha|clara|catherine|karen|moira|tessa|samantha|serena|kate|fiona|heera|neerja|linda|eva/i;
 function pickVoices() {
   const en = synth.getVoices().filter((v) => /^en/i.test(v.lang));
-  const pref = (list) => list.find((v) => /en-GB/i.test(v.lang)) || list[0];
+  const nat = (list) => list.filter((v) => /natural/i.test(v.name) && !/maisie/i.test(v.name));
+  const pref = (list) => nat(list).find((v) => /en-GB/i.test(v.lang)) || nat(list)[0] || list.find((v) => /en-GB/i.test(v.lang)) || list[0];
   const fem = en.filter((v) => FEMALE.test(v.name)), mal = en.filter((v) => !FEMALE.test(v.name));
   const W = pref(fem) || pref(en), M = pref(mal) || pref(en);
-  const N = en.find((v) => v !== W && v !== M) || M || W;
+  const N = nat(en).find((v) => v !== W && v !== M) || en.find((v) => v !== W && v !== M) || M || W;
   return { W, M, N };
 }
+// Edge lists its robotic desktop voices at once and the natural ones a moment later: wait for those (other browsers: any voices).
 const voicesReady = new Promise((res) => {
   if (!synth) return res();
-  if (synth.getVoices().length) return res();
-  synth.onvoiceschanged = () => res();
-  setTimeout(res, 2000);
+  const edge = /Edg\//.test(navigator.userAgent), t0 = Date.now();
+  const t = setInterval(() => {
+    const v = synth.getVoices();
+    if ((edge ? v.some((x) => /natural/i.test(x.name)) : v.length) || Date.now() - t0 > 5000) { clearInterval(t); res(); }
+  }, 100);
 });
 function sayOne(text, voice, rate) {
   return new Promise((res) => {
@@ -443,7 +447,8 @@ $('lSubmit').onclick = () => { if (S.Ldone || confirm('Submit the Listening sect
 
 /* ---------- reading ---------- */
 const submitReading = () => { clearInterval(tick); $('clock').textContent = ''; mark('R', READING); showScore('R', 'rScore'); };
-$('rStart').onclick = () => { $('rStart').disabled = true; countdown(60 * 60, 'Reading', submitReading); };
+const startReading = () => { $('rStart').disabled = true; countdown((S.rEnd - Date.now()) / 1000, 'Reading', submitReading); };
+$('rStart').onclick = () => { S.rEnd = Date.now() + 60 * 60000; save(); startReading(); };
 $('rSubmit').onclick = () => { if (S.Rdone || confirm('Submit the Reading section? You can’t change answers afterwards.')) submitReading(); };
 
 /* ---------- writing ---------- */
@@ -473,15 +478,28 @@ function wc(n, min) { const c = words($('w' + n).value); $('w' + n + 'c').textCo
   $('w' + n).addEventListener('input', () => { S['w' + n] = $('w' + n).value; save(); wc(n, n === '1' ? 150 : 250); });
   wc(n, n === '1' ? 150 : 250);
 });
-const showModels = () => { clearInterval(tick); $('clock').textContent = ''; $('wAfter').hidden = false; $('m1').innerHTML = MODEL1; $('m2').innerHTML = MODEL2; S.wdone = true; save(); };
-$('wStart').onclick = () => { $('wStart').disabled = true; countdown(60 * 60, 'Writing', showModels); };
-$('wDone').onclick = showModels;
+if (S.wdone) S.wdone1 = S.wdone2 = true;   // saved before models were per task
+function showModels(tasks) {
+  tasks.forEach((t) => { S['wdone' + t] = true; });
+  save();
+  if (S.wTimed && S.wTimed.every((t) => S['wdone' + t])) { clearInterval(tick); $('clock').textContent = ''; S.wTimed = null; save();
+    ['wStart', 'wStart1', 'wStart2'].forEach((id) => { $(id).disabled = false; }); }
+  [1, 2].forEach((t) => { if (!S['wdone' + t]) return; $('wAfter').hidden = false; $('m' + t).innerHTML = t === 1 ? MODEL1 : MODEL2; $('m' + t).parentElement.hidden = false; });
+}
+const startWriting = () => {
+  ['wStart', 'wStart1', 'wStart2'].forEach((id) => { $(id).disabled = true; });
+  countdown((S.wEnd - Date.now()) / 1000, 'Writing', () => showModels(S.wTimed));
+};
+[['wStart', 60, [1, 2]], ['wStart1', 20, [1]], ['wStart2', 40, [2]]].forEach(([id, mins, tasks]) => {
+  $(id).onclick = () => { S.wEnd = Date.now() + mins * 60000; S.wTimed = tasks; save(); startWriting(); };
+});
+[1, 2].forEach((t) => { $('wDone' + t).onclick = () => { if (S['wdone' + t] || confirm(`Show the Task ${t} model answer? Only once you have finished Task ${t}.`)) showModels([t]); }; });
 $('wCopy').onclick = async () => {
-  const txt = `Please mark my IELTS Academic Writing using the official band descriptors (Task Achievement/Response, Coherence and Cohesion, Lexical Resource, Grammatical Range and Accuracy). Give a band for each criterion and each task, then the 3 changes that would raise my score most.\n\nTASK 1 (bar chart: % of commuters in Greenford by mode, 2005 → 2025: car 52→38, bus 18→21, train 10→16, bicycle 5→14, walking 15→11):\n${$('w1').value}\n\nTASK 2 (In many countries, a growing number of young people are choosing to study at universities abroad. Do the advantages of this trend outweigh the disadvantages?):\n${$('w2').value}`;
+  const txt = `Please mark my IELTS Academic Writing using the official band descriptors (Task Achievement/Response, Coherence and Cohesion, Lexical Resource, Grammatical Range and Accuracy). Give a band for each criterion and each task, then the 3 changes that would raise my score most.\n\nTASK 1 (bar chart: % of commuters in Greenford by mode, 2005 → 2025: car 52→38, bus 18→21, train 10→16, bicycle 5→14, walking 15→11):\n${$('w1').value.trim() || '(not written)'}\n\nTASK 2 (In many countries, a growing number of young people are choosing to study at universities abroad. Do the advantages of this trend outweigh the disadvantages?):\n${$('w2').value.trim() || '(not written)'}`;
   try { await navigator.clipboard.writeText(txt); $('wCopied').textContent = 'Copied. Paste it into a chat with Claude.'; }
   catch (e) { $('wCopied').textContent = 'Copy failed. Select the text yourself and copy it.'; }
 };
-if (S.wdone) showModels();
+showModels([]);
 
 /* ---------- speaking ---------- */
 const qlist = (sets) => sets.map(([topic, qs]) => `<div class="grp"><div class="t">${topic}</div><ul>${qs.map((q) => `<li>${q}</li>`).join('')}</ul></div>`).join('');
@@ -504,6 +522,7 @@ function renderResults() {
   $('resTable').innerHTML = `<table class="res">${row('Listening', 'L')}${row('Reading', 'R')}<tr><td>Writing</td><td colspan="2" class="muted">self-assess, or paste it to Claude</td></tr><tr><td>Speaking</td><td colspan="2" class="muted">self-assess from your recording</td></tr></table>`;
 }
 if (S.Ldone) { mark('L', LISTENING); showScore('L', 'lScore'); showScripts(); }
-if (S.Rdone) { mark('R', READING); showScore('R', 'rScore'); }
+if (S.Rdone) { mark('R', READING); showScore('R', 'rScore'); } else if (S.rEnd > Date.now()) startReading();
+if (S.wEnd > Date.now() && S.wTimed && !S.wTimed.every((t) => S['wdone' + t])) startWriting();
 renderResults();
 $('reset').onclick = () => { if (confirm('Clear every answer, essay and score for this mock?')) { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); } };

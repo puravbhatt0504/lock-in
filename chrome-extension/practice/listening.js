@@ -41,7 +41,7 @@ document.addEventListener('input', keep);
 document.addEventListener('change', keep);
 
 // Usual published Academic/General Listening raw score → band table.
-const norm = (s) => String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/^£/, '').replace(/\s+/g, ' ').trim().replace(/[.,]$/, '');
+const norm = (s) => String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[-–—]/g, ' ').replace(/^£/, '').replace(/\s+/g, ' ').trim().replace(/[.,]$/, '');
 const BANDS = [[39, 9], [37, 8.5], [35, 8], [32, 7.5], [30, 7], [26, 6.5], [23, 6], [18, 5.5], [16, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [0, 0]];
 const band = (raw) => BANDS.find(([min]) => raw >= min)[1];
 

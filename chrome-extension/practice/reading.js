@@ -41,7 +41,7 @@ document.addEventListener('input', keep);
 document.addEventListener('change', keep);
 
 // Official Academic Reading raw score → band table.
-const norm = (s) => String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/\s+/g, ' ').trim().replace(/[.,]$/, '');
+const norm = (s) => String(s || '').toLowerCase().replace(/[’‘]/g, "'").replace(/[-–—]/g, ' ').replace(/\s+/g, ' ').trim().replace(/[.,]$/, '');
 const BANDS = [[39, 9], [37, 8.5], [35, 8], [33, 7.5], [30, 7], [27, 6.5], [23, 6], [19, 5.5], [15, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [0, 0]];
 const band = (raw) => BANDS.find(([min]) => raw >= min)[1];
 
@@ -67,8 +67,9 @@ function mark() {
 }
 
 let tick = null;
-function countdown(secs) {
-  const end = Date.now() + secs * 1000;
+function countdown() {
+  const end = S.end;   // saved, so a reload keeps the clock running
+  $('start').disabled = true;
   const draw = () => {
     const left = Math.max(0, Math.round((end - Date.now()) / 1000));
     $('clock').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
@@ -76,7 +77,7 @@ function countdown(secs) {
   };
   draw(); tick = setInterval(draw, 1000);
 }
-$('start').onclick = () => { $('start').disabled = true; countdown(60 * 60); };
+$('start').onclick = () => { S.end = Date.now() + 60 * 60000; save(); countdown(); };
 $('submit').onclick = () => { if (S.done || confirm('Submit Reading? You can’t change answers afterwards.')) { clearInterval(tick); $('clock').textContent = ''; mark(); } };
 $('reset').onclick = () => { if (confirm('Clear every answer and the score for this test?')) { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); } };
-if (S.done) mark();
+if (S.done) mark(); else if (S.end > Date.now()) countdown();

@@ -62,7 +62,7 @@
 
 <section id="listening">
   <h2>Listening · 4 parts · 40 questions · about 30 minutes</h2>
-  <p class="muted">The recordings are read aloud by your computer's built-in voices, so they sound more robotic than the real test. The rules are the same as the real thing: you hear each part <b>once</b>, and you answer while you listen. Use headphones. Your answers save automatically.</p>
+  <p class="muted">The recordings are read aloud by your browser's voices: Microsoft Edge uses its natural voices (needs internet), other browsers sound more robotic. The rules are the same as the real thing: you hear each part <b>once</b>, and you answer while you listen. Use headphones. Your answers save automatically.</p>
   <div class="bar">
     <button class="go" id="lPlay">Start the Listening test</button>
     <label class="muted">from <select id="lFrom"><option value="0">Part 1</option><option value="1">Part 2</option><option value="2">Part 3</option><option value="3">Part 4</option></select></label>
@@ -88,7 +88,7 @@
 <section id="writing" hidden>
   <h2>Writing · 2 tasks · 60 minutes</h2>
   <p class="muted">Spend about 20 minutes on Task 1 and 40 on Task 2. Task 2 is worth twice as much. Your drafts save automatically.</p>
-  <div class="bar"><button class="go" id="wStart">Start the 60-minute timer</button></div>
+  <div class="bar"><button class="go" id="wStart">Start the 60-minute timer (both tasks)</button><button class="ghost" id="wStart1">20 min: Task 1 only</button><button class="ghost" id="wStart2">40 min: Task 2 only</button></div>
   <div class="grp">
     <div class="t">Writing Task 1</div>
     <p>The table below shows the average number of hours per week that teenagers in one country spent on five activities in 2010 and 2024.</p>
@@ -108,7 +108,8 @@
     <div class="wc" id="w2c"></div>
   </div>
   <div class="bar">
-    <button class="go" id="wDone">Finish and show model answers</button>
+    <button class="go" id="wDone1">Done with Task 1: show its model</button>
+    <button class="go" id="wDone2">Done with Task 2: show its model</button>
     <button class="ghost" id="wCopy">Copy my answers for Claude to mark</button>
     <span class="muted" id="wCopied"></span>
   </div>
@@ -120,8 +121,8 @@
       <li><b>Both:</b> varied linking (not "Firstly… Secondly… Moreover" in every paragraph), accurate complex sentences, and no memorised phrases.</li>
     </ul>
     <p class="muted">Full official criteria: <a href="https://ielts.org/cdn/ielts-guides/ielts-writing-band-descriptors.pdf">Writing band descriptors (PDF)</a>.</p>
-    <details><summary>Model answer · Task 1 (about 180 words)</summary><div id="m1"></div></details>
-    <details><summary>Model answer · Task 2 (about 300 words)</summary><div id="m2"></div></details>
+    <details hidden><summary>Model answer · Task 1 (about 180 words)</summary><div id="m1"></div></details>
+    <details hidden><summary>Model answer · Task 2 (about 300 words)</summary><div id="m2"></div></details>
   </div>
 </section>
 

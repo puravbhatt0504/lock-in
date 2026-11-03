@@ -65,15 +65,19 @@ essay.addEventListener('input', () => { try { localStorage.setItem(KEY, essay.va
 wc();
 let tick = null;
 $('start').textContent = `Start the ${MINS}-minute timer`;
-$('start').onclick = () => {
+const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+const timer = (end) => {
   $('start').disabled = true;
-  const end = Date.now() + MINS * 60000;
   tick = setInterval(() => {
     const left = Math.max(0, Math.round((end - Date.now()) / 1000));
     $('clock').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
-    if (!left) { clearInterval(tick); $('clock').textContent = 'Time'; essay.readOnly = true; review(); }
+    if (!left) { clearInterval(tick); store(KEY + '-end', null); $('clock').textContent = 'Time'; essay.readOnly = true; review(); }
   }, 1000);
 };
+$('start').onclick = () => { const end = Date.now() + MINS * 60000; store(KEY + '-end', end); timer(end); };
+let saved = null;
+try { saved = +localStorage.getItem(KEY + '-end'); } catch (e) {}
+if (saved > Date.now()) timer(saved);   // a reload keeps the clock running
 
 /* ---------- instant checks (rough; a band score needs a marker) ---------- */
 const STOP = new Set('about above after again against because been before being below between both could does doing during each from further have having here into itself more most other ought over same should some such than that their theirs them themselves then there these they this those through under until very were what when where which while whom will with would your also many much people however although while whereas'.split(' '));

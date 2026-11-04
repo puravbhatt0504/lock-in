@@ -8,6 +8,7 @@ const CARD = SET.card.join(' ');
 let S = {};
 try { S = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
 S.p1 = S.p1 || []; S.p3 = S.p3 || []; S.p2 = S.p2 || { q: CARD, text: '', secs: 0 };
+S.pf = S.pf || { q: SET.follow, text: '', secs: 0 };   // the examiner's one-question follow-up after Part 2
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -51,14 +52,14 @@ const say = (text) => new Promise(async (res) => {
 /* ---------- answers: one box per question, filled by speech-to-text, Win+H dictation or typing ---------- */
 let recording = false;
 let cur = null;                                        // the answer being spoken: { part, i, t0 }
-const slot = (c) => (c.part === 'p2' ? S.p2 : S[c.part][c.i]);
-const boxFor = (c) => document.querySelector(`textarea[data-part="${c.part}"][data-i="${c.part === 'p2' ? 0 : c.i}"]`);
+const slot = (c) => (Array.isArray(S[c.part]) ? S[c.part][c.i] : S[c.part]);
+const boxFor = (c) => document.querySelector(`textarea[data-part="${c.part}"][data-i="${c.i}"]`);
 function tally() { if (cur && cur.t0) { const a = slot(cur); a.secs = (a.secs || 0) + (Date.now() - cur.t0) / 1000; cur.t0 = 0; save(); } }
 let last = null, lastUntil = 0;                         // the answer just closed: words still being recognised belong to it
 function closeAnswer() { tally(); if (cur) { last = cur; lastUntil = Date.now() + 1200; } cur = null; }
 function openAnswer(part, i) { closeAnswer(); cur = { part, i, t0: recording ? Date.now() : 0 }; }
 function box(part, i) {
-  const a = part === 'p2' ? S.p2 : S[part][i];
+  const a = slot({ part, i });
   const t = Object.assign(document.createElement('textarea'), { className: 'ans', value: a.text || '', spellcheck: false,
     placeholder: 'Your answer is written here while you record. Or press Win+H to dictate, or type it.' });
   t.dataset.part = part; t.dataset.i = i;
@@ -93,6 +94,11 @@ function asker(part, list, btn) {
 asker('p1', SET.p1, 'ask1');
 asker('p3', SET.p3, 'ask3');
 $('p2box').append(box('p2', 0));
+function showFollow() {
+  $('follow').innerHTML = `Examiner’s follow-up: <i>${SET.follow}</i>`;
+  if (!boxFor({ part: 'pf', i: 0 })) $('follow').after(box('pf', 0));
+}
+if (S.pf.text) showFollow();
 
 function beep() {
   try { const c = new AudioContext(), o = c.createOscillator(); o.connect(c.destination); o.frequency.value = 880; o.start(); o.stop(c.currentTime + 0.4); } catch (e) {}
@@ -122,20 +128,36 @@ $('prep').onclick = async () => {
   closeAnswer();
   $('clock').textContent = '';
   $('status').textContent = 'Time.';
-  $('follow').innerHTML = `Examiner’s follow-up: <i>${SET.follow}</i>`;
+  showFollow();
   await say('Thank you. ' + SET.follow);
+  $('status').textContent = 'Answer the follow-up in a sentence or two, then go on to Part 3.';
+  openAnswer('pf', 0);                                  // stays open until the first Part 3 question
 };
 
 /* ---------- recording: audio to play back + speech-to-text into the answer boxes ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, mr = null, retries = 0, srLive = false;
+let rec = null, mr = null, retries = 0, srLive = false, retryT = 0;
+const LIVE = 'Recording. Answers appear under each question.';
+// Speech-to-text died: stop the answer clock (dead time would count as silence and pull the speech rate down),
+// then keep bringing it back by itself; only after several failures in a row ask for a click.
+function srDown(why) {
+  const r = rec; rec = null; srLive = false; tally();
+  if (r) { try { r.abort(); } catch (x) {} }
+  clearTimeout(retryT);
+  if (!recording) return;
+  if (retries >= 6) return paused(why);
+  $('recstat').textContent = 'Speech-to-text dropped out: reconnecting…';
+  retryT = setTimeout(() => { if (recording && !rec) startSR(); }, 400 * ++retries);
+}
+// Edge sometimes accepts start() and then never starts: treat that as a failure too.
+const watch = (me) => setTimeout(() => { if (rec === me && !srLive && recording) srDown('stuck'); }, 3000);
 // Edge ends speech-to-text after pauses and won't always restart it without a click, so every click
 // (next question, Part 2 start, or anywhere on the page) brings it back if it has stopped.
 function reviveSR() {
   if (!recording || !SR || (rec && srLive)) return;
   if (rec) { const r = rec; rec = null; try { r.abort(); } catch (x) {} }
   retries = 0; startSR();
-  $('recstat').textContent = 'Recording. Answers appear under each question.';
+  $('recstat').textContent = LIVE;
 }
 document.addEventListener('pointerdown', reviveSR);
 async function startRec() {
@@ -161,8 +183,9 @@ async function startRec() {
   else if (rec) $('recstat').textContent = 'Recording. Answers appear under each question.';
 }
 function startSR() {
+  clearTimeout(retryT);
   rec = new SR();
-  rec.lang = 'en-GB'; rec.continuous = true; rec.interimResults = true;
+  rec.lang = 'en-IN'; rec.continuous = true; rec.interimResults = true;   // Indian English: fewer misheard words for an Indian accent
   rec.onresult = (e) => {
     let interim = '';
     for (let k = e.resultIndex; k < e.results.length; k++) {
@@ -178,21 +201,21 @@ function startSR() {
     $('heard').textContent = interim && cur ? 'Hearing: ' + interim : '';
   };
   const me = rec;
-  rec.onstart = () => { if (rec === me) srLive = true; };
-  rec.onerror = (e) => {
-    if (rec !== me || e.error === 'no-speech' || e.error === 'aborted') return;
-    rec = null; srLive = false;
-    // Starting together with the microphone permission prompt can fail once: try again when the permission has settled.
-    if (e.error === 'not-allowed' && recording && retries++ < 2) return setTimeout(() => { if (recording && !rec) { startSR(); $('recstat').textContent = 'Recording. Answers appear under each question.'; } }, 800);
-    paused(e.error);
+  rec.onstart = () => {
+    if (rec !== me) return;
+    srLive = true; retries = 0;
+    if (recording && cur && !cur.t0) cur.t0 = Date.now();   // back after a drop-out: the answer clock runs again
+    $('recstat').textContent = LIVE;
   };
+  // Errors (network, the microphone prompt still open, …) are retried; no-speech and aborted just end it, and onend restarts it.
+  rec.onerror = (e) => { if (rec === me && e.error !== 'no-speech' && e.error !== 'aborted') srDown(e.error); };
   rec.onend = () => {                                   // it stops by itself after silence: start it again
     if (rec !== me) return;
     srLive = false;
     if (!recording) return;
-    try { me.start(); } catch (x) { rec = null; paused('stopped'); }
+    try { me.start(); watch(me); } catch (x) { srDown('stopped'); }
   };
-  try { rec.start(); } catch (x) { rec = null; paused('could not start'); }
+  try { rec.start(); watch(me); } catch (x) { srDown('could not start'); }
 }
 function paused(why) {
   if (recording) $('recstat').textContent = `Speech-to-text paused (${why}). Audio is still recording. Click anywhere on the page, or ask the next question, and it starts again.`;
@@ -235,7 +258,9 @@ ${S.p1.map((x) => `Q: ${x.q}\n${a(x)}`).join('\n\n')}
 
 PART 2
 Cue card: ${task} You should say: ${rest.slice(0, -1).join('; ')}; ${rest[rest.length - 1]}
-${a(S.p2)}
+${a(S.p2)}${S.pf.text ? `
+Examiner’s follow-up: ${S.pf.q}
+${a(S.pf)}` : ''}
 
 PART 3
 ${S.p3.map((x) => `Q: ${x.q}\n${a(x)}`).join('\n\n')}`;

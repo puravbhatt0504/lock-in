@@ -21,7 +21,7 @@ $('card').innerHTML = `<p><b>${task}</b></p><p>You should say:</p><ul>${rest.sli
 
 // The examiner's voice: one natural British voice per set in Edge, else any English voice.
 const synth = window.speechSynthesis;
-let talking = false, quietUntil = 0, utter = null;   // utter: keeps the utterance alive, or Chromium may drop it and never fire onend
+let talking = false, quietUntil = 0, utter = null, examiner = '';   // utter: keeps the utterance alive, or Chromium may drop it and never fire onend
 // Edge lists its robotic desktop voices at once and the natural ones a moment later: wait for those (other browsers: any voices).
 const voicesReady = new Promise((res) => {
   if (!synth) return res();
@@ -33,7 +33,7 @@ const voicesReady = new Promise((res) => {
 });
 const say = (text) => new Promise(async (res) => {
   if (!synth) return res();
-  talking = true;
+  talking = true; examiner = text;
   await voicesReady;
   synth.cancel();
   const en = synth.getVoices().filter((v) => /^en/i.test(v.lang)), name = ['Ryan', 'Sonia', 'Thomas', 'Libby'][(N - 1) % 4];
@@ -56,7 +56,22 @@ const slot = (c) => (Array.isArray(S[c.part]) ? S[c.part][c.i] : S[c.part]);
 const boxFor = (c) => document.querySelector(`textarea[data-part="${c.part}"][data-i="${c.i}"]`);
 function tally() { if (cur && cur.t0) { const a = slot(cur); a.secs = (a.secs || 0) + (Date.now() - cur.t0) / 1000; cur.t0 = 0; save(); } }
 let last = null, lastUntil = 0;                         // the answer just closed: words still being recognised belong to it
-function closeAnswer() { tally(); if (cur) { last = cur; lastUntil = Date.now() + 1200; } cur = null; }
+// Words shown as "Hearing:" but not final yet. If the recogniser never finalises them (it stops, or the next question starts), they are kept as heard.
+let pending = '', pendingTo = null;
+function keep(to, t) { const a = slot(to); a.text = (a.text ? a.text + ' ' : '') + t; save(); const b = boxFor(to); if (b) b.value = a.text; }
+function flush() { if (pending && pendingTo) keep(pendingTo, pending); pending = ''; pendingTo = null; }
+// ponytail: a final that arrives after this 1.2 s wait into the next answer repeats those words; rare, and a repeat beats a lost sentence.
+function closeAnswer() {
+  tally();
+  if (cur) { const c = last = cur; lastUntil = Date.now() + 1200; setTimeout(() => { if (pendingTo === c) flush(); }, 1200); }
+  cur = null;
+}
+// In the moment after the examiner stops, text made mostly of the question's words is their voice; anything else is you starting to answer.
+function isEcho(t) {
+  if (Date.now() >= quietUntil) return false;
+  const q = new Set(SpeakReview.words(examiner)), w = SpeakReview.words(t);
+  return w.filter((x) => q.has(x)).length * 2 > w.length;
+}
 function openAnswer(part, i) { closeAnswer(); cur = { part, i, t0: recording ? Date.now() : 0 }; }
 function box(part, i) {
   const a = slot({ part, i });
@@ -141,7 +156,7 @@ const LIVE = 'Recording. Answers appear under each question.';
 // Speech-to-text died: stop the answer clock (dead time would count as silence and pull the speech rate down),
 // then keep bringing it back by itself; only after several failures in a row ask for a click.
 function srDown(why) {
-  const r = rec; rec = null; srLive = false; tally();
+  const r = rec; rec = null; srLive = false; tally(); flush();
   if (r) { try { r.abort(); } catch (x) {} }
   clearTimeout(retryT);
   if (!recording) return;
@@ -192,12 +207,11 @@ function startSR() {
       const r = e.results[k], t = r[0].transcript.trim();
       if (!r.isFinal) { interim += t + ' '; continue; }
       // Into the open answer, or the one just closed if these are its last words; never the examiner's voice.
-      const to = cur && !talking && Date.now() >= quietUntil ? cur : Date.now() < lastUntil ? last : null;
-      if (!t || !to) continue;
-      const a = slot(to);
-      a.text = (a.text ? a.text + ' ' : '') + t; save();
-      const b = boxFor(to); if (b) b.value = a.text;
+      const to = cur && !talking && !isEcho(t) ? cur : Date.now() < lastUntil ? last : null;
+      if (to === pendingTo) pending = '';
+      if (t && to) keep(to, t);
     }
+    if (cur && !talking && !isEcho(interim)) { pending = interim.trim(); pendingTo = cur; }
     $('heard').textContent = interim && cur ? 'Hearing: ' + interim : '';
   };
   const me = rec;
@@ -210,6 +224,8 @@ function startSR() {
   // Errors (network, the microphone prompt still open, …) are retried; no-speech and aborted just end it, and onend restarts it.
   rec.onerror = (e) => { if (rec === me && e.error !== 'no-speech' && e.error !== 'aborted') srDown(e.error); };
   rec.onend = () => {                                   // it stops by itself after silence: start it again
+    if (rec && rec !== me) return;
+    flush();
     if (rec !== me) return;
     srLive = false;
     if (!recording) return;

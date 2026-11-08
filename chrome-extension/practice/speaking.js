@@ -151,7 +151,17 @@ $('prep').onclick = async () => {
 
 /* ---------- recording: audio to play back + speech-to-text into the answer boxes ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, mr = null, retries = 0, srLive = false, retryT = 0;
+let rec = null, mr = null, retries = 0, srLive = false, retryT = 0, deaf = 0, lang = 'en-IN';   // lang: Indian English, fewer misheard words for an Indian accent
+// On Android the audio recorder and speech-to-text can't share the microphone: speech-to-text then hears only silence.
+// So there, audio is off by default and "Save audio too" turns it on (it is always on where there is no speech-to-text).
+const ANDROID = /Android/i.test(navigator.userAgent), AUDIO_KEY = 'ielts-speak-audio';
+let keepAudio = !ANDROID;
+try { const v = localStorage.getItem(AUDIO_KEY); if (v !== null) keepAudio = v === '1'; } catch (e) {}
+if (SR) {
+  $('audioOpt').hidden = false; $('keepAudio').checked = keepAudio;
+  $('keepAudio').onchange = () => { keepAudio = $('keepAudio').checked; try { localStorage.setItem(AUDIO_KEY, keepAudio ? '1' : '0'); } catch (e) {} };
+}
+const BLOCKED = 'Microphone blocked for this page. Tap the icon left of the address, then Permissions → Microphone → Allow, and press Start recording again.';
 const LIVE = 'Recording. Answers appear under each question.';
 // Speech-to-text died: stop the answer clock (dead time would count as silence and pull the speech rate down),
 // then keep bringing it back by itself; only after several failures in a row ask for a click.
@@ -176,14 +186,18 @@ function reviveSR() {
 }
 document.addEventListener('pointerdown', reviveSR);
 async function startRec() {
-  recording = true; retries = 0;
+  recording = true; retries = 0; deaf = 0;
+  $('keepAudio').disabled = true;
   if (SR) startSR();                                   // Edge only allows speech-to-text to start straight from the click
+  const audio = !SR || keepAudio;
   let stream;
   try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-  catch (e) { stopRec(); $('recstat').textContent = 'Microphone blocked. Allow it from the address bar, then press Start recording again.'; return; }
+  catch (e) { stopRec(); $('recstat').textContent = BLOCKED; return; }
+  if (!audio) stream.getTracks().forEach((t) => t.stop());   // only asked for the permission: leave the microphone to speech-to-text
   if (SR && !rec) { retries = 0; startSR(); }          // refused while the microphone prompt was open: the permission is settled now
   if (cur) cur.t0 = Date.now();
   $('rec').textContent = 'Stop recording'; $('rec').classList.add('on');
+  if (!audio) { mr = null; if (rec) $('recstat').textContent = LIVE; return; }
   const chunks = [];
   mr = new MediaRecorder(stream);
   mr.ondataavailable = (e) => chunks.push(e.data);
@@ -200,7 +214,7 @@ async function startRec() {
 function startSR() {
   clearTimeout(retryT);
   rec = new SR();
-  rec.lang = 'en-IN'; rec.interimResults = true;   // Indian English: fewer misheard words for an Indian accent
+  rec.lang = lang; rec.interimResults = true;
   // Android Chrome repeats earlier words in each result in continuous mode, so there it takes one phrase at a time (onend restarts it).
   rec.continuous = !/Android/i.test(navigator.userAgent);
   rec.onresult = (e) => {
@@ -214,7 +228,10 @@ function startSR() {
       if (t && to) keep(to, t);
     }
     if (cur && !talking && !isEcho(interim)) { pending = interim.trim(); pendingTo = cur; }
-    $('heard').textContent = interim && cur ? 'Hearing: ' + interim : '';
+    const any = [...e.results].slice(e.resultIndex).map((r) => r[0].transcript).join(' ').trim();
+    if (any) { deaf = 0; if ($('recstat').dataset.deaf) { $('recstat').textContent = LIVE; delete $('recstat').dataset.deaf; } }
+    $('heard').textContent = !any || talking ? '' : cur ? (interim ? 'Hearing: ' + interim : '')
+      : `Heard: “${any}”. Tap Ask the next question first, or it isn’t saved.`;
   };
   const me = rec;
   rec.onstart = () => {
@@ -224,7 +241,20 @@ function startSR() {
     $('recstat').textContent = LIVE;
   };
   // Errors (network, the microphone prompt still open, …) are retried; no-speech and aborted just end it, and onend restarts it.
-  rec.onerror = (e) => { if (rec === me && e.error !== 'no-speech' && e.error !== 'aborted') srDown(e.error); };
+  rec.onerror = (e) => {
+    if (rec !== me) return;
+    if (e.error === 'no-speech') {                      // silence: after ~15 s of it during an answer, say so
+      if (cur && !talking && ++deaf >= 3) {
+        $('recstat').dataset.deaf = '1';
+        $('recstat').textContent = mr ? 'Speech-to-text hears nothing. Stop recording, untick Save audio too and start again: on many Android phones the two can’t share the microphone.'
+          : 'Speech-to-text hears nothing. Check the microphone isn’t muted or used by another app, or tap in the box and use your keyboard’s mic key.';
+      }
+      return;
+    }
+    if (e.error === 'aborted') return;
+    if (e.error === 'language-not-supported' && lang !== 'en-US') lang = lang === 'en-IN' ? 'en-GB' : 'en-US';
+    srDown(e.error);
+  };
   rec.onend = () => {                                   // it stops by itself after silence: start it again
     if (rec && rec !== me) return;
     flush();
@@ -236,16 +266,19 @@ function startSR() {
   try { rec.start(); watch(me); } catch (x) { srDown('could not start'); }
 }
 function paused(why) {
-  if (recording) $('recstat').textContent = `Speech-to-text paused (${why}). Audio is still recording. Click anywhere on the page, or ask the next question, and it starts again.`;
+  if (recording && /not-allowed/.test(why)) { $('recstat').textContent = BLOCKED; return; }
+  if (recording) $('recstat').textContent = `Speech-to-text paused (${why}).${mr ? ' Audio is still recording.' : ''} Click anywhere on the page, or ask the next question, and it starts again.`;
 }
 function stopRec() {
   recording = false;
   tally();
   const r = rec; rec = null; srLive = false; if (r) r.stop();
   if (mr && mr.state !== 'inactive') mr.stop();
+  $('keepAudio').disabled = false;
   $('rec').textContent = 'Start recording'; $('rec').classList.remove('on');
   $('heard').textContent = '';
-  $('recstat').textContent = 'Stopped. Play it back below, check the answer boxes, then press Rate my speaking.';
+  $('recstat').textContent = mr ? 'Stopped. Play it back below, check the answer boxes, then press Rate my speaking.'
+    : 'Stopped. Check the answer boxes, then press Rate my speaking.';
 }
 $('rec').onclick = () => (recording ? stopRec() : startRec());
 

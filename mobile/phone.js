@@ -1,8 +1,19 @@
 /* Phone copy only (added by mobile/build.sh): a link back to the hub, and dictation hints that make sense off Windows. */
 (() => {
   const windows = /Windows/.test(navigator.userAgent);
-  const fix = (s) => s.replace(/press Win\+H to dictate/g, 'tap the mic key on your keyboard to dictate')
-    .replace(/press Win\+H/g, 'tap the mic key on your keyboard').replace(/Win\+H/g, 'keyboard mic');
+  const fix = (s) => s.replace(/click in (an answer|a) box and press/g, 'tap in $1 box and press')
+    .replace(/press (<b>)?Win\+H(<\/b>)?/g, 'tap the mic key on your keyboard').replace(/Win\+H/g, 'the keyboard mic');
+  // Keep the screen on while a test is open: a sleeping phone stops the Listening audio and the Speaking examiner.
+  let lock = null, asking = false;
+  const awake = async () => {
+    if (lock || asking || document.visibilityState !== 'visible' || !navigator.wakeLock) return;
+    asking = true;
+    try { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); } catch (e) {}
+    asking = false;
+  };
+  document.addEventListener('visibilitychange', awake);
+  addEventListener('pointerdown', awake);
+  awake();
   addEventListener('DOMContentLoaded', () => {
     const h = document.querySelector('header');
     if (h) {

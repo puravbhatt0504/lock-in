@@ -11,6 +11,6 @@ cp chrome-extension/material/mock-*.html chrome-extension/material/mock-*.js "$o
 cp mobile/index.html mobile/phone.js "$out/"
 for f in "$out"/practice/*.html "$out"/material/*.html; do
   grep -q '</head>' "$f" || { echo "no </head> in $f" >&2; exit 1; }
-  sed -i 's#</head>#<script src="../phone.js"></script>\n</head>#' "$f"
+  perl -0pi -e 's#</head>#<script src="../phone.js"></script>\n</head>#' "$f"   # perl: same on Linux and macOS
 done
 echo "Built $out: $(find "$out" -type f | wc -l) files"

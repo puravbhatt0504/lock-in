@@ -35,7 +35,7 @@
   .script p { margin:4px 0; } .script .who { font-weight:700; margin-right:6px; }
   .card2 { border:2px solid var(--ink); border-radius:8px; padding:12px 18px; max-width:560px; background:var(--card); }
   #status { font-size:15px; font-weight:600; }
-  table.res { border-collapse:collapse; } table.res td { border-top:1px solid var(--line); padding:6px 16px 6px 0; }
+  table.res { border-collapse:collapse; } @media (max-width:600px) { table.res { display:block; max-width:100%; overflow-x:auto; } } table.res td { border-top:1px solid var(--line); padding:6px 16px 6px 0; }
   svg text { fill:var(--ink); font:13px system-ui, sans-serif; }
   .fb { list-style:none; padding:0; } .fb li { padding:6px 0 6px 26px; border-top:1px solid var(--line); position:relative; }
   .fb li::before { position:absolute; left:4px; font-weight:700; } .fb li.ok::before { content:'✓'; color:var(--ok); } .fb li.warn::before { content:'!'; color:var(--bad); }

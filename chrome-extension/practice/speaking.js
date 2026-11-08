@@ -200,7 +200,9 @@ async function startRec() {
 function startSR() {
   clearTimeout(retryT);
   rec = new SR();
-  rec.lang = 'en-IN'; rec.continuous = true; rec.interimResults = true;   // Indian English: fewer misheard words for an Indian accent
+  rec.lang = 'en-IN'; rec.interimResults = true;   // Indian English: fewer misheard words for an Indian accent
+  // Android Chrome repeats earlier words in each result in continuous mode, so there it takes one phrase at a time (onend restarts it).
+  rec.continuous = !/Android/i.test(navigator.userAgent);
   rec.onresult = (e) => {
     let interim = '';
     for (let k = e.resultIndex; k < e.results.length; k++) {

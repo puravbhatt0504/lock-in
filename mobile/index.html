@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IELTS Practice Tests</title>
+<style>
+  /* Layout: one narrow column of sections, each a wrap-grid of numbered test tiles, sized for thumbs. */
+  :root { color-scheme: light;
+    --bg: #f5f6f3; --card: #ffffff; --ink: #1d2320; --soft: #5f6a64; --line: #d9ddd8; --acc: #b5432f;
+    --display: "Fraunces", Georgia, serif; --body: "Source Sans 3", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#141715; --card:#1d211f; --ink:#e8ebe7; --soft:#9aa59f; --line:#2f3532; --acc:#ff7a61; color-scheme: dark } }
+  :root[data-theme="dark"] { --bg:#141715; --card:#1d211f; --ink:#e8ebe7; --soft:#9aa59f; --line:#2f3532; --acc:#ff7a61; color-scheme: dark }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+  .wrap { max-width: 680px; margin: 0 auto; padding-block: 24px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+  h1 { font: 600 30px/1.15 var(--display); margin: 0; text-wrap: balance; }
+  h2 { font: 600 20px/1.2 var(--display); margin: 0; }
+  .lede { color: var(--soft); margin: 6px 0 0; }
+  section { display: grid; gap: 10px; }
+  .meta { color: var(--soft); font-size: 14px; margin: 0; }
+  .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); margin: 4px 0 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+  .grid a { display: grid; place-items: center; min-height: 48px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); text-decoration: none; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .grid a:hover, .grid a:focus-visible { border-color: var(--acc); color: var(--acc); outline: none; }
+  .grid.wide { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .notes { border-top: 1px solid var(--line); padding-top: 18px; display: grid; gap: 8px; color: var(--soft); font-size: 15px; }
+  .notes p { margin: 0; } .notes b { color: var(--ink); }
+  a { color: var(--acc); }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Source+Sans+3:wght@400;600&display=swap">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>IELTS Practice Tests</h1>
+    <p class="lede">Your Academic Reading, Listening, Writing and Speaking sets, plus the two full mocks. Answers save on this phone as you go.</p>
+  </header>
+
+  <section>
+    <h2>Full mocks</h2>
+    <p class="meta">Listening, Reading, Writing and Speaking. Listening and Reading are auto-marked.</p>
+    <div class="grid wide" id="mocks"></div>
+  </section>
+
+  <section>
+    <h2>Reading</h2>
+    <p class="meta">3 passages · 40 questions · 60 minutes · band score on submit</p>
+    <div class="grid" data-href="practice/reading.html?n=" data-count="8"></div>
+  </section>
+
+  <section>
+    <h2>Listening</h2>
+    <p class="meta">4 parts · 40 questions · read aloud by the phone's voice · transcripts after submit</p>
+    <div class="grid" data-href="practice/listening.html?n=" data-count="8"></div>
+  </section>
+
+  <section>
+    <h2>Writing</h2>
+    <p class="label">Task 1 · 20 minutes</p>
+    <div class="grid" data-href="practice/writing.html?task=1&amp;n=" data-count="7"></div>
+    <p class="label">Task 2 · 40 minutes</p>
+    <div class="grid" data-href="practice/writing.html?task=2&amp;n=" data-count="11"></div>
+  </section>
+
+  <section>
+    <h2>Speaking</h2>
+    <p class="meta">Sets 1–4 are the evening mocks; 5–36 are the daily morning sets.</p>
+    <div class="grid" data-href="practice/speaking.html?n=" data-count="36"></div>
+  </section>
+
+  <div class="notes">
+    <p><b>Use Chrome.</b> Listening and the Speaking examiner use your phone's speech voices.</p>
+    <p><b>Speaking:</b> press <b>Start recording</b> and allow the microphone. Your answer is saved as audio you can play back or download, and speech-to-text writes it under each question. If speech-to-text stops, tap anywhere on the page to restart it, or use your keyboard's mic key.</p>
+    <p>Answers stay in this browser on this phone. They don't sync with the PC.</p>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.grid[data-href]').forEach((g) => {
+    for (let i = 1; i <= +g.dataset.count; i++) {
+      const a = document.createElement('a');
+      a.href = g.dataset.href + i; a.textContent = i;
+      g.appendChild(a);
+    }
+  });
+  [['material/mock-1.html', 'Mock 1'], ['material/mock-2.html', 'Mock 2']].forEach(([href, label]) => {
+    const a = document.createElement('a'); a.href = href; a.textContent = label;
+    document.getElementById('mocks').appendChild(a);
+  });
+</script>
+</body>
+</html>

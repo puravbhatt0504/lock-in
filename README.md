@@ -41,6 +41,8 @@ The day-by-day study plan (tasks, video and PDF links) lives in `chrome-extensio
 
 `chrome-extension/material/` holds two more original full mocks (`mock-1.html`, `mock-2.html`: Listening, Reading, Writing and Speaking, with Listening and Reading auto-marked). The band descriptor links open the official PDFs on ielts.org.
 
+**On a phone:** `.github/workflows/pages.yml` publishes the practice tests and both mocks to GitHub Pages (`https://<user>.github.io/lock-in/`), microphone recording included. Turn it on once under Settings → Pages → Source: **GitHub Actions**; after that every push to `main` that touches the tests redeploys. `mobile/build.sh` builds the same site locally.
+
 ## Google Calendar
 
 With `GOOGLE_CALENDAR_ICS_URL` set, the PC app fetches the calendar every 10 minutes and writes the next 3 weeks of matching events into `schedule.json`. Only timed events whose title starts with the filter (default `IELTS`, comma-separated for several) count, and they replace the weekly blocks. Sync needs the PC app running.

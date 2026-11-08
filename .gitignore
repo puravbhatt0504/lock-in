@@ -13,3 +13,6 @@ chrome-extension/material/*
 # Android build output and local signing key
 phone-blocker/out/
 phone-blocker/signing.keystore
+
+# Phone site build output (mobile/build.sh)
+_site/

@@ -379,6 +379,8 @@
     // short names only as a whole label (hulu.com, not a host that merely contains "hulu"), Apple TV, Prime Video and miniTV on Amazon
     `^https?://([^/]*\\.)?(hulu|mubi|viki|viu|voot)\\.[^/]*/.*`,
     `^https?://tv\\.apple\\.com/.*`,
+    // live streaming
+    `^https?://([^/]*\\.)?(twitch\\.tv|kick\\.com)/.*`,
     `^https?://(www\\.)?amazon\\.[a-z.]+/(gp/video|minitv)([/?#].*)?$`,
   ];
   // Video hosts that pirate sites embed their players from (label is the name, digits allowed). The sites' domains rotate; these mostly don't.
@@ -394,8 +396,11 @@
 
   const isAllowedYouTube = (url) => new RegExp(YT_ALLOW_RE, 'i').test(url);
   const isYouTube = (url) => new RegExp(YT_RE, 'i').test(url);
-  const isAnime = (url) => ANIME_RES.some((re) => new RegExp(re, 'i').test(url));
-  const isStream = (url) => STREAM_RES.some((re) => new RegExp(re, 'i').test(url));
+  // Sites the name rules would catch by mistake ("flix" in FlixBus). Never blocked: an allow rule in dnrRules and skipped by the tab sweep.
+  const NOT_BLOCKED_RE = '^https?://([a-z0-9-]+\\.)*(flixbus|flixtrain)\\.([a-z]{2,3}|com?\\.[a-z]{2})/.*';   // .com .in .de .co.uk .com.br
+  const notBlocked = (url) => new RegExp(NOT_BLOCKED_RE, 'i').test(url);
+  const isAnime = (url) => !notBlocked(url) && ANIME_RES.some((re) => new RegExp(re, 'i').test(url));
+  const isStream = (url) => !notBlocked(url) && STREAM_RES.some((re) => new RegExp(re, 'i').test(url));
   const isEmbed = (url) => EMBED_RES.some((re) => new RegExp(re, 'i').test(url));
   const isSafeHost = (host) => SAFE_HOST_RE.test(host);
 
@@ -444,6 +449,7 @@
         condition: { regexFilter: re, resourceTypes: ['main_frame', 'sub_frame', 'media', 'xmlhttprequest'] } })),
       ...(learned.length ? [{ id: 7, priority: 1, action: { type: 'redirect', redirect: { regexSubstitution: blockedPageUrl + '?site=stream#\\0' } },
         condition: { regexFilter: '^https?://.*', requestDomains: learned, resourceTypes: ['main_frame'] } }] : []),
+      { id: 5, priority: 2, action: { type: 'allow' }, condition: { regexFilter: NOT_BLOCKED_RE, resourceTypes: ['main_frame'] } },
       // Allow rules use plain urlFilters: one combined regex is over Chrome's 2KB regex limit.
       { id: 3, priority: 2, action: { type: 'allow' },
         condition: { urlFilter: '||youtube.com/playlist?', resourceTypes: ['main_frame'] } },

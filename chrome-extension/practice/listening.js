@@ -100,20 +100,20 @@ const voicesReady = new Promise((res) => {
     if ((edge ? v.some((x) => /natural/i.test(x.name)) : v.length) || Date.now() - t0 > 5000) { clearInterval(t); res(); }
   }, 100);
 });
-const sayOne = (text, voice, rate) => new Promise((res) => {
+const sayOne = (text, voice, rate, pitch) => new Promise((res) => {
   // Kept in window: Chromium can drop an unreferenced utterance and never fire onend.
   const u = window.__utter = new SpeechSynthesisUtterance(text);
   if (voice) { u.voice = voice; u.lang = voice.lang; }
   let quiet = 0, done = false, w = 0;
   const end = () => { if (done) return; done = true; clearInterval(w); res(); };
-  u.rate = rate; u.onend = u.onerror = end;
+  u.rate = rate; u.pitch = pitch || 1; u.onend = u.onerror = end;
   synth.speak(u);
   w = setInterval(() => { quiet = synth.speaking || synth.pending ? 0 : quiet + 1; if (quiet >= 4) end(); }, 250);   // backup if onend never fires
 });
-async function say(text, voice, rate) {
+async function say(text, voice, rate, pitch) {
   // Chrome's Google voices cut off long utterances, so those go sentence by sentence; Edge's natural voices read whole lines.
-  if (!voice || !/google/i.test(voice.name)) return sayOne(text, voice, rate);
-  for (const s of text.match(/[^.!?]+[.!?]*/g) || [text]) { if (!playing) return; await sayOne(s.trim(), voice, rate); }
+  if (!voice || !/google/i.test(voice.name)) return sayOne(text, voice, rate, pitch);
+  for (const s of text.match(/[^.!?]+[.!?]*/g) || [text]) { if (!playing) return; await sayOne(s.trim(), voice, rate, pitch); }
 }
 const wait = (secs, msg) => new Promise((res) => {
   const end = Date.now() + secs * 1000;
@@ -129,19 +129,22 @@ async function playFrom(start) {
   const rate = +$('rate').value;
   playing = true; $('play').disabled = true; $('stop').disabled = false;
   for (let p = start; p < T.length && playing; p++) {
-    const V = castFor(p, pickVoices()), who2 = [...new Set(T[p].script.map((l) => l[0]))].filter((w) => V.labels[w]);
-    const playingMsg = `Part ${p + 1} · playing${who2.length ? ' · ' + who2.map((w) => V.labels[w]).join(', ') : ' · open in Microsoft Edge for natural voices'}`;
+    const V = castFor(p, pickVoices()), C0 = Voices.apply(V), who2 = [...new Set(T[p].script.map((l) => l[0]))].filter((w) => V.labels[w]);
+    const hint = C0.mine ? ' · your voices' : /Android/i.test(navigator.userAgent) ? ' · change them under Voices' : ' · open in Microsoft Edge for natural voices';
+    const playingMsg = `Part ${p + 1} · playing${who2.length && !C0.mine ? ' · ' + who2.map((w) => V.labels[w]).join(', ') : hint}`;
     for (const [who, a, b] of T[p].script) {
       if (!playing) break;
       if (who === 'P') { await wait(a, `Part ${p + 1} · ${b}`); continue; }
       $('status').textContent = playingMsg;
-      await say(a, V[who], rate);
+      const C = Voices.apply(V);                   // per line, so a change in the Voices panel applies at once
+      await say(a, C[who].voice, rate, C[who].pitch);
     }
   }
   if (playing) $('status').textContent = 'Recording finished. Check your spelling, then submit.';
   playing = false; $('play').disabled = false; $('stop').disabled = true;
 }
 $('play').onclick = () => playFrom(+$('from').value);
+Voices.panel(document.querySelector('.bar'), () => castFor(+$('from').value, pickVoices()), () => playing);
 $('stop').onclick = () => { playing = false; synth.cancel(); $('status').textContent = 'Stopped.'; };
 $('submit').onclick = () => { if (S.done || confirm('Submit Listening? You can’t change answers afterwards.')) { playing = false; synth && synth.cancel(); mark(); } };
 $('reset').onclick = () => { if (confirm('Clear every answer and the score for this test?')) { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); } };

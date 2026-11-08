@@ -395,21 +395,21 @@ const voicesReady = new Promise((res) => {
     if ((edge ? v.some((x) => /natural/i.test(x.name)) : v.length) || Date.now() - t0 > 5000) { clearInterval(t); res(); }
   }, 100);
 });
-function sayOne(text, voice, rate) {
+function sayOne(text, voice, rate, pitch) {
   return new Promise((res) => {
     // Kept in window: Chromium can drop an unreferenced utterance and never fire onend.
     const u = window.__utter = new SpeechSynthesisUtterance(text);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
     let quiet = 0, done = false, w = 0;
     const end = () => { if (done) return; done = true; clearInterval(w); res(); };
-    u.rate = rate; u.onend = u.onerror = end;
+    u.rate = rate; u.pitch = pitch || 1; u.onend = u.onerror = end;
     synth.speak(u);
     w = setInterval(() => { quiet = synth.speaking || synth.pending ? 0 : quiet + 1; if (quiet >= 4) end(); }, 250);   // backup if onend never fires
   });
 }
-async function say(text, voice, rate) {
+async function say(text, voice, rate, pitch) {
   // Speak sentence by sentence: Chrome cuts off long utterances on some voices.
-  for (const s of text.match(/[^.!?]+[.!?]*/g) || [text]) { if (!playing) return; await sayOne(s.trim(), voice, rate); }
+  for (const s of text.match(/[^.!?]+[.!?]*/g) || [text]) { if (!playing) return; await sayOne(s.trim(), voice, rate, pitch); }
 }
 const wait = (secs, msg) => new Promise((res) => {
   const end = Date.now() + secs * 1000;
@@ -429,13 +429,15 @@ async function playFrom(start) {
       if (!playing) break;
       if (who === 'P') { await wait(a, `${LISTENING[p].title} · ${b}`); continue; }
       $('status').textContent = `${LISTENING[p].title} · playing`;
-      await say(a, V[who], rate);
+      const C = Voices.apply(V);
+      await say(a, C[who].voice, rate, C[who].pitch);
     }
   }
   if (playing) $('status').textContent = 'Recording finished. Check your answers, then submit.';
   playing = false; $('lPlay').disabled = false; $('lStop').disabled = true;
 }
 $('lPlay').onclick = () => playFrom(+$('lFrom').value);
+Voices.panel($('lStop').closest('.bar'), pickVoices, () => playing);
 $('lStop').onclick = () => { playing = false; synth.cancel(); $('status').textContent = 'Stopped.'; };
 
 function showScripts() {

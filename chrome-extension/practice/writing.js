@@ -77,7 +77,7 @@ const timer = (end) => {
 $('start').onclick = () => { const end = Date.now() + MINS * 60000; store(KEY + '-end', end); timer(end); };
 let saved = null;
 try { saved = +localStorage.getItem(KEY + '-end'); } catch (e) {}
-if (saved > Date.now()) timer(saved);   // a reload keeps the clock running
+if (saved) timer(saved);   // a reload keeps the clock running; one that ran out while the page was closed ends at once
 
 /* ---------- instant checks (rough; a band score needs a marker) ---------- */
 const STOP = new Set('about above after again against because been before being below between both could does doing during each from further have having here into itself more most other ought over same should some such than that their theirs them themselves then there these they this those through under until very were what when where which while whom will with would your also many much people however although while whereas'.split(' '));

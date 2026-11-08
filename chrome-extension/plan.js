@@ -352,7 +352,8 @@
   // ---- URL rules ----
   const IDS = Object.values(VIDEOS).map((v) => v[0]);
   const ID_ALT = IDS.join('|'); // '-' and '_' are literal outside a character class
-  const YT_RE = '^https?://([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be)/.*';
+  // YouTube, its no-cookie embed domain (plays any video full screen) and the Invidious / Piped front-ends (a label of exactly that name)
+  const YT_RE = '^https?://(([a-z0-9-]+\\.)*(youtube\\.com|youtu\\.be|youtube-nocookie\\.com)|([a-z0-9-]+\\.)*(invidious|piped|yewtu)\\.[a-z0-9.-]+)/.*';
   const YT_ALLOW_RE = `^https?://((www|m)\\.)?youtube\\.com/(watch\\?([^#]*&)?v=(${ID_ALT})([&#].*)?$|playlist\\?|feed/playlists)|^https?://youtu\\.be/(${ID_ALT})`;
   // Chrome rejects a rule regex that compiles too big, so long word lists become several rules of a few words each.
   const chunk = (a, n) => (a.length ? [a.slice(0, n), ...chunk(a.slice(n), n)] : []);
@@ -370,9 +371,15 @@
   const STREAM_RES = [
     ...chunk(['movie', 'flix', 'film', 'tvshow', 'watchseries', 'soap2day', 'putlocker', 'primewire', 'cineb', 'hdtoday', 'hurawatch', 'tinyzone',
       'vumoo', 'dramacool', 'kissasian', 'kisscartoon', 'wcostream', 'iptv', 'torrent', '1337x', 'piratebay', 'rarbg', 'hdhub4u', 'bolly4u',
-      'tamilmv', 'tamilrockers', 'tamilblasters', 'isaimini', 'mkvcinemas', 'worldfree4u', 'khatrimaza', 'streameast', 'crackstreams', 'sportsurge'], 6)
+      'tamilmv', 'tamilrockers', 'tamilblasters', 'isaimini', 'mkvcinemas', 'worldfree4u', 'khatrimaza', 'streameast', 'crackstreams', 'sportsurge',
+      // paid / official services
+      'primevideo', 'hotstar', 'jiocinema', 'mxplayer', 'zee5', 'sonyliv', 'disneyplus', 'hbomax', 'peacocktv', 'paramountplus', 'sunnxt', 'erosnow'], 6)
       .map((w) => `^https?://[^/]*(${w.join('|')})[^/]*/.*`),
     `^https?://([^/]*\\.)?(dulo|yts|nyaa|gogo|vidsrc|2embed)[^/]*/.*`,
+    // short names only as a whole label (hulu.com, not a host that merely contains "hulu"), Apple TV, Prime Video and miniTV on Amazon
+    `^https?://([^/]*\\.)?(hulu|mubi|viki|viu|voot)\\.[^/]*/.*`,
+    `^https?://tv\\.apple\\.com/.*`,
+    `^https?://(www\\.)?amazon\\.[a-z.]+/(gp/video|minitv)([/?#].*)?$`,
   ];
   // Video hosts that pirate sites embed their players from (label is the name, digits allowed). The sites' domains rotate; these mostly don't.
   const EMBED_RES = chunk(['vidsrc', 'vidplay', 'vidlink', 'vidcloud', 'vidmoly', 'vidhide', 'vidguard', 'vidstream', 'megacloud', 'rabbitstream',

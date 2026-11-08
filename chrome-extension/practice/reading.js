@@ -75,9 +75,9 @@ function countdown() {
     $('clock').textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
     if (!left) { clearInterval(tick); mark(); }
   };
-  draw(); tick = setInterval(draw, 1000);
+  tick = setInterval(draw, 1000); draw();   // interval first: a clock already at 0 clears it in draw()
 }
 $('start').onclick = () => { S.end = Date.now() + 60 * 60000; save(); countdown(); };
 $('submit').onclick = () => { if (S.done || confirm('Submit Reading? You can’t change answers afterwards.')) { clearInterval(tick); $('clock').textContent = ''; mark(); } };
 $('reset').onclick = () => { if (confirm('Clear every answer and the score for this test?')) { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); } };
-if (S.done) mark(); else if (S.end > Date.now()) countdown();
+if (S.done) mark(); else if (S.end) countdown();   // a timer that ran out while the page was closed submits at once

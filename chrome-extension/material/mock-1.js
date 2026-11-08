@@ -367,7 +367,7 @@ function countdown(secs, label, onEnd, el = $('clock')) {
     el.textContent = `${label} ${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
     if (!left) { clearInterval(tick); beep(); onEnd && onEnd(); }
   };
-  draw(); tick = setInterval(draw, 250);
+  tick = setInterval(draw, 250); draw();   // interval first: a clock already at 0 clears it in draw()
 }
 function beep() {
   try { const c = new AudioContext(), o = c.createOscillator(); o.connect(c.destination); o.frequency.value = 880; o.start(); o.stop(c.currentTime + 0.4); } catch (e) {}
@@ -524,7 +524,7 @@ function renderResults() {
   $('resTable').innerHTML = `<table class="res">${row('Listening', 'L')}${row('Reading', 'R')}<tr><td>Writing</td><td colspan="2" class="muted">self-assess, or paste it to Claude</td></tr><tr><td>Speaking</td><td colspan="2" class="muted">self-assess from your recording</td></tr></table>`;
 }
 if (S.Ldone) { mark('L', LISTENING); showScore('L', 'lScore'); showScripts(); }
-if (S.Rdone) { mark('R', READING); showScore('R', 'rScore'); } else if (S.rEnd > Date.now()) startReading();
-if (S.wEnd > Date.now() && S.wTimed && !S.wTimed.every((t) => S['wdone' + t])) startWriting();
+if (S.Rdone) { mark('R', READING); showScore('R', 'rScore'); } else if (S.rEnd) startReading();   // ran out while closed: submits at once
+if (S.wEnd && S.wTimed && !S.wTimed.every((t) => S['wdone' + t])) startWriting();
 renderResults();
 $('reset').onclick = () => { if (confirm('Clear every answer, essay and score for this mock?')) { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); } };

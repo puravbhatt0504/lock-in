@@ -415,20 +415,23 @@ const wait = (secs, msg) => new Promise((res) => {
   const end = Date.now() + secs * 1000;
   const t = setInterval(() => {
     const left = Math.ceil((end - Date.now()) / 1000);
+    if (left <= 0 || !playing) { clearInterval(t); return res(); }   // check first, or Stop's message gets overwritten
     $('status').textContent = `${msg}: ${left}s`;
-    if (left <= 0 || !playing) { clearInterval(t); res(); }
   }, 200);
 });
 async function playFrom(start) {
-  if (!synth) { $('status').textContent = 'This browser has no built-in speech. Open the file in Chrome or Edge.'; return; }
+  if (!synth && !ListenAudio.available()) { $('status').textContent = 'This browser has no built-in speech. Open the file in Chrome or Edge.'; return; }
   await voicesReady;
   const V = pickVoices(), rate = +$('lRate').value;
   playing = true; $('lPlay').disabled = true; $('lStop').disabled = false;
   for (let p = start; p < LISTENING.length && playing; p++) {
-    for (const [who, a, b] of LISTENING[p].script) {
+    const id = `M1-${p}`, script = LISTENING[p].script;
+    for (const [i, [who, a, b]] of script.entries()) {
       if (!playing) break;
+      ListenAudio.preload(id, script.slice(i + 1, i + 4).filter((l) => l[0] !== 'P'));
       if (who === 'P') { await wait(a, `${LISTENING[p].title} · ${b}`); continue; }
       $('status').textContent = `${LISTENING[p].title} · playing`;
+      if (await ListenAudio.play(id, who, a, rate)) continue;   // recorded line; otherwise the browser's voices read it
       const C = Voices.apply(V);
       await say(a, C[who].voice, rate, C[who].pitch);
     }
@@ -438,14 +441,14 @@ async function playFrom(start) {
 }
 $('lPlay').onclick = () => playFrom(+$('lFrom').value);
 Voices.panel($('lStop').closest('.bar'), pickVoices, () => playing);
-$('lStop').onclick = () => { playing = false; synth.cancel(); $('status').textContent = 'Stopped.'; };
+$('lStop').onclick = () => { playing = false; ListenAudio.stop(); synth && synth.cancel(); $('status').textContent = 'Stopped.'; };
 
 function showScripts() {
   $('lScript').hidden = false;
   $('lScript').innerHTML = '<h3>Transcripts</h3>' + LISTENING.map((p) => `<details><summary>${p.title}</summary><div class="script">${
     p.script.filter((l) => l[0] !== 'P').map(([w, t]) => `<p><span class="who">${{ N: '', W: 'Woman:', M: 'Man:' }[w]}</span>${esc(t)}</p>`).join('')}</div></details>`).join('');
 }
-$('lSubmit').onclick = () => { if (S.Ldone || confirm('Submit the Listening section? You can’t change answers afterwards.')) { playing = false; synth && synth.cancel(); mark('L', LISTENING); showScore('L', 'lScore'); showScripts(); } };
+$('lSubmit').onclick = () => { if (S.Ldone || confirm('Submit the Listening section? You can’t change answers afterwards.')) { playing = false; ListenAudio.stop(); synth && synth.cancel(); mark('L', LISTENING); showScore('L', 'lScore'); showScripts(); } };
 
 /* ---------- reading ---------- */
 const submitReading = () => { clearInterval(tick); $('clock').textContent = ''; mark('R', READING); showScore('R', 'rScore'); };

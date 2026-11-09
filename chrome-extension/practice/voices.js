@@ -53,7 +53,10 @@ window.Voices = (() => {
     if (!synth || !after) return;
     const d = document.createElement('details');
     d.className = 'voices';
-    d.innerHTML = `<summary>Voices</summary><p class="muted">Pick who reads each role. Automatic uses the best voices this browser has.
+    const LA = window.ListenAudio, recorded = LA && LA.available();
+    d.innerHTML = `<summary>Voices</summary>${recorded ? `<label class="vrec"><input type="checkbox" data-rec${LA.enabled() ? ' checked' : ''}>
+      <b>Recorded natural voices</b> <span class="muted">(recommended). Untick to use this browser's own voices, set below.</span></label>` : ''}
+      <p class="muted">Browser voices: pick who reads each role. Automatic uses the best voices this browser has.
       On Android, install more voices in Settings → Text-to-speech → Google → Install voice data, then reload.</p><div class="vrows"></div>
       <div class="bar"><button class="ghost" type="button" data-reset>Back to automatic</button></div>`;
     after.insertAdjacentElement('afterend', d);
@@ -85,6 +88,7 @@ window.Voices = (() => {
       sample(e.target.closest('.vrow').dataset.r, V);
     });
     d.querySelector('[data-reset]').onclick = () => { mine = {}; store(); draw(); };
+    if (recorded) d.querySelector('[data-rec]').onchange = (e) => LA.setEnabled(e.target.checked);
     d.addEventListener('toggle', () => { if (d.open) draw(); });
     if (synth.addEventListener) synth.addEventListener('voiceschanged', () => { if (d.open) draw(); });
   }

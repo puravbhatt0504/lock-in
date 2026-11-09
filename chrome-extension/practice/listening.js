@@ -124,18 +124,21 @@ const wait = (secs, msg) => new Promise((res) => {
   }, 200);
 });
 async function playFrom(start) {
-  if (!synth) { $('status').textContent = 'This browser has no built-in speech voices. Use Edge or Chrome.'; return; }
+  if (!synth && !ListenAudio.available()) { $('status').textContent = 'This browser has no built-in speech voices. Use Edge or Chrome.'; return; }
   await voicesReady;
   const rate = +$('rate').value;
   playing = true; $('play').disabled = true; $('stop').disabled = false;
   for (let p = start; p < T.length && playing; p++) {
     const V = castFor(p, pickVoices()), C0 = Voices.apply(V), who2 = [...new Set(T[p].script.map((l) => l[0]))].filter((w) => V.labels[w]);
     const hint = C0.mine ? ' · your voices' : /Android/i.test(navigator.userAgent) ? ' · change them under Voices' : ' · open in Microsoft Edge for natural voices';
-    const playingMsg = `Part ${p + 1} · playing${who2.length && !C0.mine ? ' · ' + who2.map((w) => V.labels[w]).join(', ') : hint}`;
-    for (const [who, a, b] of T[p].script) {
+    const id = `L${N}-${p}`, rec = T[p].script.some(([w, t]) => w !== 'P' && ListenAudio.has(id, w, t));
+    const playingMsg = `Part ${p + 1} · playing${rec ? ' · recorded voices' : who2.length && !C0.mine ? ' · ' + who2.map((w) => V.labels[w]).join(', ') : hint}`;
+    for (const [i, [who, a, b]] of T[p].script.entries()) {
       if (!playing) break;
+      ListenAudio.preload(id, T[p].script.slice(i + 1, i + 4).filter((l) => l[0] !== 'P'));
       if (who === 'P') { await wait(a, `Part ${p + 1} · ${b}`); continue; }
       $('status').textContent = playingMsg;
+      if (await ListenAudio.play(id, who, a, rate)) continue;   // recorded line; otherwise the browser's voices read it
       const C = Voices.apply(V);                   // per line, so a change in the Voices panel applies at once
       await say(a, C[who].voice, rate, C[who].pitch);
     }
@@ -145,7 +148,7 @@ async function playFrom(start) {
 }
 $('play').onclick = () => playFrom(+$('from').value);
 Voices.panel(document.querySelector('.bar'), () => castFor(+$('from').value, pickVoices()), () => playing);
-$('stop').onclick = () => { playing = false; synth.cancel(); $('status').textContent = 'Stopped.'; };
-$('submit').onclick = () => { if (S.done || confirm('Submit Listening? You can’t change answers afterwards.')) { playing = false; synth && synth.cancel(); mark(); } };
+$('stop').onclick = () => { playing = false; ListenAudio.stop(); synth && synth.cancel(); $('status').textContent = 'Stopped.'; };
+$('submit').onclick = () => { if (S.done || confirm('Submit Listening? You can’t change answers afterwards.')) { playing = false; ListenAudio.stop(); synth && synth.cancel(); mark(); } };
 $('reset').onclick = () => { if (confirm('Clear every answer and the score for this test?')) { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); } };
 if (S.done) mark();

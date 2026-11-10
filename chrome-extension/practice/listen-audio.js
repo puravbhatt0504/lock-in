@@ -1,12 +1,16 @@
-// Recorded Listening audio: natural voices generated once by tools/listening-audio (Kokoro TTS), one MP3 per line.
-// Used by listening.html and the mocks; the browser's own voices are the fallback for any line without a recording.
+// Recorded audio: natural voices generated once by tools/listening-audio (Kokoro TTS), one MP3 per line.
+// Used by listening.html, the mocks and speaking.html (the examiner); the browser's own voices are the fallback for any line without a recording.
 // Also loaded by tools/listening-audio/lines.js under Node, so the cast and file names here are the single source.
 (function (root) {
   const NARRATOR = 'bf_emma';
   const WOMEN = ['bf_isabella', 'af_heart', 'af_bella'];
   const MEN = ['bm_george', 'am_michael', 'bm_fable', 'am_fenrir'];
-  // id: 'L<test>-<part>' (practice tests 1–8) or 'M<mock>-<part>'; parts 0–3. Each test and part gets its own pair of voices.
+  const EXAMINERS = ['bm_george', 'bf_emma', 'bm_fable', 'bf_isabella'];   // British, one per Speaking set in turn
+  // id: 'L<test>-<part>' (practice tests 1–8) or 'M<mock>-<part>', parts 0–3: each test and part gets its own pair of voices.
+  // 'S<set>': the Speaking examiner (role X) for that set.
   function cast(id) {
+    const s = /^S(\d+)$/.exec(id);
+    if (s) return { X: EXAMINERS[(+s[1] - 1) % EXAMINERS.length] };
     const [, kind, n, p] = /^([LM])(\d+)-(\d)$/.exec(id);
     const t = +n + (kind === 'M' ? 8 : 0), part = +p;
     return { N: NARRATOR, W: WOMEN[(t + part) % WOMEN.length], M: MEN[(3 * t + part) % MEN.length] };

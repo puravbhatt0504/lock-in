@@ -19,7 +19,8 @@ $('pick').onchange = (e) => { location.search = '?n=' + e.target.value; };
 const [task, ...rest] = SET.card;
 $('card').innerHTML = `<p><b>${task}</b></p><p>You should say:</p><ul>${rest.slice(0, -1).map((p) => `<li>${p}</li>`).join('')}</ul><p>${rest[rest.length - 1]}</p>`;
 
-// The examiner's voice: one natural British voice per set in Edge, else any English voice.
+// The examiner's voice: a recorded natural British voice per set (listen-audio.js); for a line without a recording,
+// Edge's natural voice for the set, else any English voice.
 const synth = window.speechSynthesis;
 let talking = false, quietUntil = 0, utter = null, examiner = '';   // utter: keeps the utterance alive, or Chromium may drop it and never fire onend
 // Edge lists its robotic desktop voices at once and the natural ones a moment later: wait for those (other browsers: any voices).
@@ -32,8 +33,14 @@ const voicesReady = new Promise((res) => {
   }, 100);
 });
 const say = (text) => new Promise(async (res) => {
-  if (!synth) return res();
+  const me = utter = {};                                // a newer question takes over from this one
   talking = true; examiner = text;
+  ListenAudio.stop(); if (synth) synth.cancel();
+  if (await ListenAudio.play('S' + N, 'X', text, 1)) {  // recorded at the same pace as the 0.95 rate below
+    if (utter === me) { talking = false; quietUntil = Date.now() + 700; }
+    return res();
+  }
+  if (!synth) { if (utter === me) talking = false; return res(); }
   await voicesReady;
   synth.cancel();
   const en = synth.getVoices().filter((v) => /^en/i.test(v.lang)), name = ['Ryan', 'Sonia', 'Thomas', 'Libby'][(N - 1) % 4];
